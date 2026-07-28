@@ -1,7 +1,7 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "/api";
 
 export async function submitContact(data: { name: string; email: string; message: string }) {
-  const res = await fetch(`${API_BASE}/api/contact`, {
+  const res = await fetch(`${API_BASE}/contact`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
