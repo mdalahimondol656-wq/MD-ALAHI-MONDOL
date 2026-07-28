@@ -12,3 +12,5 @@ dist/
 frontend_stderr.log
 frontend_stdout.log
 frontend_error.log
+
+.vercel
