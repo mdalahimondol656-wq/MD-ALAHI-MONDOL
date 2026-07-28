@@ -1,0 +1,186 @@
+@import "tailwindcss";
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 80px;
+  }
+
+  body {
+    @apply bg-slate-950 text-slate-100 antialiased overflow-x-hidden;
+    background: 
+      radial-gradient(ellipse at 50% 0%, rgba(6, 182, 212, 0.12) 0%, transparent 60%),
+      radial-gradient(ellipse at 20% 80%, rgba(30, 58, 138, 0.15) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 60%, rgba(8, 145, 178, 0.1) 0%, transparent 50%),
+      linear-gradient(180deg, #0c4a6e 0%, #164e63 25%, #0f766e 50%, #134e4a 75%, #020617 100%);
+    background-attachment: fixed;
+  }
+
+  ::selection {
+    @apply bg-teal-500/30 text-teal-200;
+  }
+
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-slate-900;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-teal-700/50 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-teal-600/70;
+  }
+}
+
+@layer components {
+  .section-container {
+    @apply mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8;
+  }
+
+  .section-title {
+    @apply mb-4 text-center text-2xl font-bold tracking-tight sm:text-3xl lg:text-4xl xl:text-5xl text-white;
+  }
+
+  .section-subtitle {
+    @apply mt-4 text-center text-base sm:text-lg text-slate-400 max-w-2xl mx-auto;
+  }
+
+  .glass-card {
+    @apply rounded-2xl border border-cyan-500/10 bg-white/[0.02] backdrop-blur-xl shadow-2xl shadow-black/20;
+  }
+
+  .glow-teal {
+    box-shadow: 0 0 30px rgba(6, 182, 212, 0.15), 0 0 60px rgba(6, 182, 212, 0.05);
+  }
+
+  .glow-text {
+    @apply bg-gradient-to-r from-cyan-400 via-blue-400 to-teal-400 bg-clip-text text-transparent;
+  }
+
+  .btn-primary {
+    @apply rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 px-8 py-3.5 text-sm font-semibold text-white transition-all duration-300 hover:from-cyan-500 hover:to-blue-500 hover:shadow-lg hover:shadow-cyan-500/25 hover:-translate-y-0.5;
+  }
+
+  .btn-secondary {
+    @apply rounded-xl border border-white/20 px-8 py-3.5 text-sm font-semibold text-slate-300 backdrop-blur transition-all duration-300 hover:border-white/40 hover:bg-white/5 hover:text-white hover:-translate-y-0.5;
+  }
+
+  .skill-tag {
+    @apply rounded-full bg-white/5 px-4 py-2 text-sm font-medium text-slate-300 backdrop-blur border border-white/10 transition-all duration-300 hover:bg-cyan-500/10 hover:text-cyan-300 hover:border-cyan-500/30 hover:-translate-y-0.5;
+  }
+
+  .timeline-dot {
+    @apply absolute left-0 top-1.5 h-4 w-4 rounded-full border-2 border-teal-400 bg-slate-950 shadow-lg shadow-teal-500/20;
+  }
+
+  .timeline-line {
+    @apply absolute left-[7px] top-0 h-full w-0.5 bg-gradient-to-b from-teal-500/40 via-teal-500/20 to-transparent;
+  }
+
+  .fade-in-up {
+    opacity: 0;
+    transform: translateY(40px);
+    transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .fade-in-up.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .skill-bar-bg {
+    @apply h-2 rounded-full bg-white/5 overflow-hidden;
+  }
+
+  .skill-bar-fill {
+    @apply h-full rounded-full bg-gradient-to-r from-cyan-500 to-blue-400 transition-all duration-1000 ease-out;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-12px); }
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 0.8; }
+  }
+
+  .animate-pulse-glow {
+    animation: pulse-glow 3s ease-in-out infinite;
+  }
+
+  @keyframes bioluminescent-pulse {
+    0%, 100% { 
+      opacity: 0.3;
+      transform: scale(1);
+    }
+    50% { 
+      opacity: 0.7;
+      transform: scale(1.05);
+    }
+  }
+
+  .animate-bioluminescent {
+    animation: bioluminescent-pulse 4s ease-in-out infinite;
+  }
+
+  @keyframes caustics {
+    0%, 100% {
+      opacity: 0.03;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.08;
+      transform: scale(1.02);
+    }
+  }
+
+  .animate-caustics {
+    animation: caustics 8s ease-in-out infinite;
+  }
+
+  @keyframes gradient-shift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  .animate-gradient {
+    background-size: 200% 200%;
+    animation: gradient-shift 8s ease infinite;
+  }
+
+  @container (min-width: 640px) {
+    .card-responsive {
+      @apply p-8;
+    }
+  }
+
+  @container (min-width: 1024px) {
+    .card-responsive {
+      @apply p-10;
+    }
+  }
+}
+
+@layer base {
+  img {
+    @apply max-w-full h-auto;
+  }
+}

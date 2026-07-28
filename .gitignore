@@ -1,0 +1,14 @@
+node_modules/
+.next/
+__pycache__/
+*.pyc
+.venv/
+env/
+*.egg-info/
+dist/
+.env
+*.db
+*.log
+frontend_stderr.log
+frontend_stdout.log
+frontend_error.log
