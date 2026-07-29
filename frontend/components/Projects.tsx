@@ -20,6 +20,24 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Brain, Search, Users, Briefcase, Star, Target, BarChart3, FileText, Handshake, Activity, Compass, BookOpen, Lightbulb, Zap, Eye, Award
 };
 
+const fallbackGroups: ProjectGroup[] = [
+  { category: "Clinical & Counseling", color: "cyan", icon: "Star", items: [
+    { id: 1, title: "Counseling Frameworks", desc: "Applied structured counseling approaches in field settings with case documentation and behavioral tracking." },
+    { id: 2, title: "Behavioral Analysis", desc: "Observed and documented behavioral patterns across diverse populations using standardized assessment tools." },
+    { id: 3, title: "Child Development Assessment", desc: "Evaluated developmental milestones and learning behaviors in educational settings." },
+  ]},
+  { category: "Research & Analytics", color: "blue", icon: "Briefcase", items: [
+    { id: 4, title: "Field Data Collection", desc: "Designed and executed data collection protocols for psychological studies with rigorous methodology." },
+    { id: 5, title: "Psychological Project Design", desc: "Formulated research methodologies, compiled field data, and performed analytical reviews on behavioral subsets." },
+    { id: 6, title: "Academic Reporting", desc: "Produced structured academic reports with evidence-based findings and recommendations." },
+  ]},
+  { category: "Corporate & Social", color: "teal", icon: "Folder", items: [
+    { id: 7, title: "Industrial-Organizational Psychology", desc: "Applied organizational behavior principles to workplace dynamics and team performance analysis." },
+    { id: 8, title: "Positive Psychology Frameworks", desc: "Utilized strengths-based approaches to promote well-being and resilience in organizational settings." },
+    { id: 9, title: "Social Psychology Dynamics", desc: "Analyzed group behavior, social influence, and interpersonal dynamics in structured environments." },
+  ]},
+];
+
 export default function Projects() {
   const [visible, setVisible] = useState(false);
   const [expandedCard, setExpandedCard] = useState<number | null>(null);
@@ -44,7 +62,7 @@ export default function Projects() {
         items: (items as ProjectItem[]).map((item, j) => ({ ...item, id: i * 100 + j })),
       }));
       setProjectGroups(groups);
-    }).catch(() => {});
+    }).catch(() => setProjectGroups(fallbackGroups));
   }, []);
 
   const colorMap: Record<string, string> = {

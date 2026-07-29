@@ -6,8 +6,7 @@ import {
   Mail, LogOut, Plus, Edit2, Trash2, Save, X, RefreshCw,
   Shield, Zap, Settings, ChevronLeft, ChevronRight, Search,
   CheckCircle, AlertCircle, Menu, Eye, Clock, BarChart3,
-  GraduationCap as GradIcon, Briefcase as BriefIcon, Award, TrendingUp,
-  Link2, Globe, Phone, MessageSquare, ExternalLink, Loader2
+  Award, TrendingUp, Link2, Globe, Phone, MessageSquare, ExternalLink, Loader2
 } from "lucide-react";
 import {
   getAdminMe, getEducationAdmin, createEducationAdmin, updateEducationAdmin, deleteEducationAdmin,

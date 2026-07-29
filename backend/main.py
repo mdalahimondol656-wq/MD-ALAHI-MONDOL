@@ -1,4 +1,5 @@
 import jwt
+import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -6,7 +7,6 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta, timezone
 import hashlib
-import secrets
 
 from database import Base, engine, get_db
 from models import ContactMessage, AdminUser, Education, Experience, ProjectGroup, ProjectItem, WebsiteContent
@@ -23,7 +23,7 @@ from schemas import (
 
 security = HTTPBearer()
 
-SECRET_KEY = "cv-portfolio-admin-secret-key-change-in-production-2024"
+SECRET_KEY = os.getenv("JWT_SECRET_KEY", "cv-portfolio-admin-secret-key-change-in-production-2024")
 ALGORITHM = "HS256"
 SESSION_DURATION_MINUTES = 720
 
@@ -103,7 +103,6 @@ async def lifespan(_app: FastAPI):
             for d in grp_data:
                 db.add(ProjectGroup(**d))
             db.commit()
-            db.refresh(db.query(ProjectGroup).order_by(ProjectGroup.sort_order).all())
 
         if db.query(ProjectItem).count() == 0:
             groups = db.query(ProjectGroup).order_by(ProjectGroup.sort_order).all()
@@ -200,7 +199,7 @@ def health_check():
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:3001", "https://your-vercel-app.vercel.app", "https://md-alahi-mondol.vercel.app", "https://mdalahimondol656-2022.vercel.app"],
+    allow_origins=["http://localhost:3000", "http://localhost:3001", "https://md-alahi-mondol.vercel.app", "https://mdalahimondol656-2022.vercel.app"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -312,8 +311,23 @@ def get_current_admin_info(current_admin: AdminUser = Depends(get_current_admin)
 # ─── Admin Profile Management ────────────────────────────────────
 
 @app.put("/api/admin/profile")
-def update_profile(profile: ProfileUpdate, current_admin: AdminUser = Depends(get_current_admin)):
-    return {"message": "Profile updated", "data": profile.model_dump(exclude_none=True)}
+def update_profile(profile: ProfileUpdate, current_admin: AdminUser = Depends(get_current_admin), db: Session = Depends(get_db)):
+    updates = profile.model_dump(exclude_none=True)
+    for key, value in updates.items():
+        if key == "skills":
+            existing = db.query(WebsiteContent).filter(WebsiteContent.section == "skills").all()
+            for item in existing:
+                db.delete(item)
+            for i, skill in enumerate(value):
+                db.add(WebsiteContent(section="skills", key="skill", value=skill, sort_order=i))
+        else:
+            item = db.query(WebsiteContent).filter(WebsiteContent.section == "profile", WebsiteContent.key == key).first()
+            if item:
+                item.value = value
+            else:
+                db.add(WebsiteContent(section="profile", key=key, value=str(value), sort_order=0))
+    db.commit()
+    return {"message": "Profile updated", "data": updates}
 
 
 # ─── Admin Education CRUD ────────────────────────────────────────

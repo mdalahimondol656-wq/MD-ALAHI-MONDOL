@@ -93,7 +93,7 @@ export default function AdminLogin() {
           </form>
 
           <p className="mt-6 text-center text-xs text-slate-500">
-            Default: admin / admin123
+            Use your admin credentials to sign in
           </p>
         </div>
       </div>

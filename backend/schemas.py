@@ -54,7 +54,7 @@ class EducationResponse(BaseModel):
     institution: str
     period: str
     detail: str
-    modules: str
+    modules: Optional[str] = ""
     sort_order: int
 
     model_config = {"from_attributes": True}
@@ -93,7 +93,7 @@ class ExperienceResponse(BaseModel):
     institution: str
     period: str
     detail: str
-    description: str
+    description: Optional[str] = ""
     sort_order: int
 
     model_config = {"from_attributes": True}

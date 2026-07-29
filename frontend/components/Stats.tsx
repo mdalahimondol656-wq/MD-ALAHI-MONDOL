@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { GraduationCap, Briefcase, Award, TrendingUp, Brain, Heart, Target, Activity, BookOpen, Users, Compass, Zap, Search, FileText, Handshake, Lightbulb, Eye } from "lucide-react";
 import { getStats } from "@/lib/api";
 
@@ -32,7 +32,7 @@ const fallbackStats: Stat[] = [
 export default function Stats() {
   const [visible, setVisible] = useState(false);
   const [stats, setStats] = useState<Stat[]>([]);
-  const countersRef = useRef<Record<string, number>>({});
+  const [displayValues, setDisplayValues] = useState<Record<string, number>>({});
 
   useEffect(() => {
     getStats().then(setStats).catch(() => setStats(fallbackStats));
@@ -52,17 +52,21 @@ export default function Stats() {
     if (!visible || stats.length === 0) return;
     const duration = 1500;
     const startTime = performance.now();
+    let rafId: number;
 
     function animate(now: number) {
       const elapsed = now - startTime;
       const progress = Math.min(elapsed / duration, 1);
       const eased = 1 - Math.pow(1 - progress, 3);
+      const newValues: Record<string, number> = {};
       stats.forEach((s) => {
-        countersRef.current[s.label] = s.value * eased;
+        newValues[s.label] = s.value * eased;
       });
-      if (progress < 1) requestAnimationFrame(animate);
+      setDisplayValues(newValues);
+      if (progress < 1) rafId = requestAnimationFrame(animate);
     }
-    requestAnimationFrame(animate);
+    rafId = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(rafId);
   }, [visible, stats]);
 
   return (
@@ -74,7 +78,7 @@ export default function Stats() {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
             {stats.map((stat, i) => {
               const Icon = iconMap[stat.icon] || Award;
-              const current = countersRef.current[stat.label] ?? 0;
+              const current = displayValues[stat.label] ?? 0;
               return (
                 <div
                   key={stat.label}

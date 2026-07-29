@@ -21,6 +21,24 @@ const categoryLabels: Record<string, string> = {
   "Soft Skills": "Soft Skills",
 };
 
+const fallbackSkills: Skill[] = [
+  { name: "Clinical Psychology", level: 75, icon: Brain, category: "Clinical" },
+  { name: "Counseling Frameworks", level: 77, icon: Heart, category: "Clinical" },
+  { name: "Behavioral Analysis", level: 79, icon: Eye, category: "Clinical" },
+  { name: "Industrial-Organizational Psychology", level: 81, icon: Lightbulb, category: "Clinical" },
+  { name: "Environmental Psychology", level: 83, icon: Target, category: "Research" },
+  { name: "Child Development Assessment", level: 85, icon: Activity, category: "Research" },
+  { name: "Educational Psychology", level: 87, icon: BookOpen, category: "Research" },
+  { name: "Positive Psychology", level: 89, icon: Users, category: "Research" },
+  { name: "Social Psychology", level: 91, icon: Compass, category: "Corporate" },
+  { name: "Cognitive Psychology", level: 93, icon: Zap, category: "Corporate" },
+  { name: "Field Data Collection", level: 95, icon: Search, category: "Corporate" },
+  { name: "Research Methodology", level: 95, icon: PieChart, category: "Corporate" },
+  { name: "Case Studies", level: 95, icon: FileText, category: "Corporate" },
+  { name: "Active Listening", level: 95, icon: Handshake, category: "Soft Skills" },
+  { name: "Empathy", level: 95, icon: MessageCircle, category: "Soft Skills" },
+];
+
 export default function About() {
   const [visible, setVisible] = useState(false);
   const [activeCategory, setActiveCategory] = useState("All");
@@ -47,7 +65,7 @@ export default function About() {
         category: i < 4 ? "Clinical" : i < 8 ? "Research" : i < 13 ? "Corporate" : "Soft Skills",
       }));
       setSkills(mapped);
-    }).catch(() => {});
+    }).catch(() => setSkills(fallbackSkills));
   }, []);
 
   const categories = Array.from(new Set(skills.map(s => s.category)));
