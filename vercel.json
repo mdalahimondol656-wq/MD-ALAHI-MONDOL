@@ -1,13 +1,21 @@
 {
-    "functions": {
-        "api/index.py": {
-            "includeFiles": "backend/**"
-        }
-    },
-    "rewrites": [
+    "builds": [
         {
-            "source": "/api/:path*",
-            "destination": "/api/index"
+            "src": "api/index.py",
+            "use": "@vercel/python",
+            "config": {
+                "includeFiles": ["backend/**"]
+            }
+        },
+        {
+            "src": "frontend/package.json",
+            "use": "@vercel/next"
+        }
+    ],
+    "routes": [
+        {
+            "src": "/api/(.*)",
+            "dest": "/api/index"
         }
     ]
 }
