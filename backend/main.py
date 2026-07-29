@@ -193,6 +193,11 @@ async def lifespan(_app: FastAPI):
 
 app = FastAPI(title="MD ALAHI MONDOL — CV Portfolio API", version="2.1.0", lifespan=lifespan)
 
+
+@app.get("/api/health")
+def health_check():
+    return {"status": "ok", "version": "2.1.0", "routes": [r.path for r in app.routes if hasattr(r, "path")]}
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000", "http://localhost:3001", "https://your-vercel-app.vercel.app", "https://md-alahi-mondol.vercel.app", "https://mdalahimondol656-2022.vercel.app"],
