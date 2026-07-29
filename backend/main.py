@@ -1,29 +1,92 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
+from datetime import datetime, timedelta
+import hashlib
+import secrets
 
 from database import Base, engine, get_db
-from models import ContactMessage
-from schemas import ContactCreate, ContactResponse
+from models import ContactMessage, AdminUser
+from schemas import (
+    ContactCreate, ContactResponse,
+    ProfileUpdate,
+    EducationCreate, EducationUpdate, EducationResponse,
+    ExperienceCreate, ExperienceUpdate, ExperienceResponse,
+    ProjectGroupCreate, ProjectGroupUpdate, ProjectGroupResponse,
+    ProjectItemCreate, ProjectItemUpdate, ProjectItemResponse,
+    AdminLogin, AdminToken, AdminUserResponse, AdminCreate
+)
+
+security = HTTPBearer()
+
+SECRET_KEY = "cv-portfolio-admin-secret-key-change-in-production-2024"
+ALGORITHM = "sha256"
+SESSION_DURATION = timedelta(hours=12)
+
+active_tokens: dict[str, datetime] = {}
+
+
+def hash_password(password: str) -> str:
+    return hashlib.sha256(password.encode()).hexdigest()
+
+
+def create_token(username: str) -> str:
+    token = secrets.token_urlsafe(32)
+    expires = datetime.now() + SESSION_DURATION
+    active_tokens[token] = expires
+    return token
+
+
+def verify_token(token: str) -> str:
+    if token not in active_tokens:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired token")
+    if datetime.now() > active_tokens[token]:
+        del active_tokens[token]
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token expired")
+    return token
+
+
+def get_current_admin(credentials: HTTPAuthorizationCredentials = Depends(security), db: Session = Depends(get_db)):
+    token = verify_token(credentials.credentials)
+    user = db.query(AdminUser).filter(AdminUser.username == token.split(":")[0]).first()
+    if not user or not user.is_active:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Admin not found or inactive")
+    return user
 
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     Base.metadata.create_all(bind=engine)
+    db = next(get_db())
+    try:
+        if not db.query(AdminUser).first():
+            admin = AdminUser(
+                username="admin",
+                password_hash=hash_password("admin123"),
+                email="admin@example.com",
+                is_active=True
+            )
+            db.add(admin)
+            db.commit()
+    finally:
+        db.close()
     yield
 
 
-app = FastAPI(title="MD ALAHI MONDOL — CV Portfolio API", version="1.0.0", lifespan=lifespan)
+app = FastAPI(title="MD ALAHI MONDOL — CV Portfolio API", version="2.0.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "https://your-vercel-app.vercel.app"],
+    allow_origins=["http://localhost:3000", "http://localhost:3001", "https://your-vercel-app.vercel.app"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+
+# ─── Public Endpoints ────────────────────────────────────────────
 
 @app.get("/api/profile")
 def get_profile():
@@ -126,3 +189,222 @@ def create_contact(payload: ContactCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(msg)
     return msg
+
+
+# ─── Admin Authentication ────────────────────────────────────────
+
+@app.post("/api/admin/login", response_model=AdminToken)
+def admin_login(payload: AdminLogin, db: Session = Depends(get_db)):
+    user = db.query(AdminUser).filter(AdminUser.username == payload.username).first()
+    if not user or not user.verify_password(payload.password):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+    token = create_token(user.username)
+    active_tokens[token] = datetime.now() + SESSION_DURATION
+    return AdminToken(access_token=f"{user.username}:{token}")
+
+
+@app.post("/api/admin/logout")
+def admin_logout(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    token = credentials.credentials.split(":")[1] if ":" in credentials.credentials else credentials.credentials
+    active_tokens.pop(token, None)
+    return {"message": "Logged out"}
+
+
+@app.get("/api/admin/me", response_model=AdminUserResponse)
+def get_current_admin_info(current_admin: AdminUser = Depends(get_current_admin)):
+    return current_admin
+
+
+# ─── Admin Profile Management ────────────────────────────────────
+
+@app.put("/api/admin/profile")
+def update_profile(profile: ProfileUpdate, current_admin: AdminUser = Depends(get_current_admin)):
+    return {"message": "Profile updated", "data": profile.model_dump(exclude_none=True)}
+
+
+# ─── Admin Education CRUD ────────────────────────────────────────
+
+@app.get("/api/admin/education", response_model=list[EducationResponse])
+def list_education(current_admin: AdminUser = Depends(get_current_admin), db: Session = Depends(get_db)):
+    from models import Education
+    items = db.query(Education).order_by(Education.sort_order).all()
+    return items
+
+
+@app.post("/api/admin/education", response_model=EducationResponse)
+def create_education(item: EducationCreate, current_admin: AdminUser = Depends(get_current_admin), db: Session = Depends(get_db)):
+    from models import Education
+    edu = Education(**item.model_dump())
+    db.add(edu)
+    db.commit()
+    db.refresh(edu)
+    return edu
+
+
+@app.put("/api/admin/education/{edu_id}", response_model=EducationResponse)
+def update_education(edu_id: int, item: EducationUpdate, current_admin: AdminUser = Depends(get_current_admin), db: Session = Depends(get_db)):
+    from models import Education
+    edu = db.query(Education).filter(Education.id == edu_id).first()
+    if not edu:
+        raise HTTPException(status_code=404, detail="Education not found")
+    for key, value in item.model_dump(exclude_none=True).items():
+        setattr(edu, key, value)
+    db.commit()
+    db.refresh(edu)
+    return edu
+
+
+@app.delete("/api/admin/education/{edu_id}")
+def delete_education(edu_id: int, current_admin: AdminUser = Depends(get_current_admin), db: Session = Depends(get_db)):
+    from models import Education
+    edu = db.query(Education).filter(Education.id == edu_id).first()
+    if not edu:
+        raise HTTPException(status_code=404, detail="Education not found")
+    db.delete(edu)
+    db.commit()
+    return {"message": "Deleted"}
+
+
+# ─── Admin Experience CRUD ───────────────────────────────────────
+
+@app.get("/api/admin/experiences", response_model=list[ExperienceResponse])
+def list_experiences(current_admin: AdminUser = Depends(get_current_admin), db: Session = Depends(get_db)):
+    from models import Experience
+    items = db.query(Experience).order_by(Experience.sort_order).all()
+    return items
+
+
+@app.post("/api/admin/experiences", response_model=ExperienceResponse)
+def create_experience(item: ExperienceCreate, current_admin: AdminUser = Depends(get_current_admin), db: Session = Depends(get_db)):
+    from models import Experience
+    exp = Experience(**item.model_dump())
+    db.add(exp)
+    db.commit()
+    db.refresh(exp)
+    return exp
+
+
+@app.put("/api/admin/experiences/{exp_id}", response_model=ExperienceResponse)
+def update_experience(exp_id: int, item: ExperienceUpdate, current_admin: AdminUser = Depends(get_current_admin), db: Session = Depends(get_db)):
+    from models import Experience
+    exp = db.query(Experience).filter(Experience.id == exp_id).first()
+    if not exp:
+        raise HTTPException(status_code=404, detail="Experience not found")
+    for key, value in item.model_dump(exclude_none=True).items():
+        setattr(exp, key, value)
+    db.commit()
+    db.refresh(exp)
+    return exp
+
+
+@app.delete("/api/admin/experiences/{exp_id}")
+def delete_experience(exp_id: int, current_admin: AdminUser = Depends(get_current_admin), db: Session = Depends(get_db)):
+    from models import Experience
+    exp = db.query(Experience).filter(Experience.id == exp_id).first()
+    if not exp:
+        raise HTTPException(status_code=404, detail="Experience not found")
+    db.delete(exp)
+    db.commit()
+    return {"message": "Deleted"}
+
+
+# ─── Admin Projects CRUD ─────────────────────────────────────────
+
+@app.get("/api/admin/projects", response_model=list[ProjectGroupResponse])
+def list_project_groups(current_admin: AdminUser = Depends(get_current_admin), db: Session = Depends(get_db)):
+    from models import ProjectGroup
+    items = db.query(ProjectGroup).order_by(ProjectGroup.sort_order).all()
+    return items
+
+
+@app.post("/api/admin/projects", response_model=ProjectGroupResponse)
+def create_project_group(item: ProjectGroupCreate, current_admin: AdminUser = Depends(get_current_admin), db: Session = Depends(get_db)):
+    from models import ProjectGroup
+    group = ProjectGroup(**item.model_dump())
+    db.add(group)
+    db.commit()
+    db.refresh(group)
+    return group
+
+
+@app.put("/api/admin/projects/{group_id}", response_model=ProjectGroupResponse)
+def update_project_group(group_id: int, item: ProjectGroupUpdate, current_admin: AdminUser = Depends(get_current_admin), db: Session = Depends(get_db)):
+    from models import ProjectGroup
+    group = db.query(ProjectGroup).filter(ProjectGroup.id == group_id).first()
+    if not group:
+        raise HTTPException(status_code=404, detail="Project group not found")
+    for key, value in item.model_dump(exclude_none=True).items():
+        setattr(group, key, value)
+    db.commit()
+    db.refresh(group)
+    return group
+
+
+@app.delete("/api/admin/projects/{group_id}")
+def delete_project_group(group_id: int, current_admin: AdminUser = Depends(get_current_admin), db: Session = Depends(get_db)):
+    from models import ProjectGroup
+    group = db.query(ProjectGroup).filter(ProjectGroup.id == group_id).first()
+    if not group:
+        raise HTTPException(status_code=404, detail="Project group not found")
+    db.delete(group)
+    db.commit()
+    return {"message": "Deleted"}
+
+
+@app.get("/api/admin/projects/{group_id}/items", response_model=list[ProjectItemResponse])
+def list_project_items(group_id: int, current_admin: AdminUser = Depends(get_current_admin), db: Session = Depends(get_db)):
+    from models import ProjectItem
+    items = db.query(ProjectItem).filter(ProjectItem.group_id == group_id).all()
+    return items
+
+
+@app.post("/api/admin/projects/{group_id}/items", response_model=ProjectItemResponse)
+def create_project_item(group_id: int, item: ProjectItemCreate, current_admin: AdminUser = Depends(get_current_admin), db: Session = Depends(get_db)):
+    from models import ProjectItem
+    proj = ProjectItem(**item.model_dump())
+    db.add(proj)
+    db.commit()
+    db.refresh(proj)
+    return proj
+
+
+@app.put("/api/admin/projects/items/{item_id}", response_model=ProjectItemResponse)
+def update_project_item(item_id: int, item: ProjectItemUpdate, current_admin: AdminUser = Depends(get_current_admin), db: Session = Depends(get_db)):
+    from models import ProjectItem
+    proj = db.query(ProjectItem).filter(ProjectItem.id == item_id).first()
+    if not proj:
+        raise HTTPException(status_code=404, detail="Project item not found")
+    for key, value in item.model_dump(exclude_none=True).items():
+        setattr(proj, key, value)
+    db.commit()
+    db.refresh(proj)
+    return proj
+
+
+@app.delete("/api/admin/projects/items/{item_id}")
+def delete_project_item(item_id: int, current_admin: AdminUser = Depends(get_current_admin), db: Session = Depends(get_db)):
+    from models import ProjectItem
+    proj = db.query(ProjectItem).filter(ProjectItem.id == item_id).first()
+    if not proj:
+        raise HTTPException(status_code=404, detail="Project item not found")
+    db.delete(proj)
+    db.commit()
+    return {"message": "Deleted"}
+
+
+# ─── Admin Contact Messages ──────────────────────────────────────
+
+@app.get("/api/admin/contacts", response_model=list[ContactResponse])
+def list_contacts(current_admin: AdminUser = Depends(get_current_admin), db: Session = Depends(get_db)):
+    messages = db.query(ContactMessage).order_by(ContactMessage.created_at.desc()).all()
+    return messages
+
+
+@app.delete("/api/admin/contacts/{contact_id}")
+def delete_contact(contact_id: int, current_admin: AdminUser = Depends(get_current_admin), db: Session = Depends(get_db)):
+    msg = db.query(ContactMessage).filter(ContactMessage.id == contact_id).first()
+    if not msg:
+        raise HTTPException(status_code=404, detail="Contact not found")
+    db.delete(msg)
+    db.commit()
+    return {"message": "Deleted"}
