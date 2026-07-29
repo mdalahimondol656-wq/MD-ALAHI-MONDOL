@@ -2,6 +2,16 @@
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { ArrowRight, MapPin, Sparkles, ChevronDown, Download, Mail } from "lucide-react";
+import { getProfile } from "@/lib/api";
+
+interface Profile {
+  name: string;
+  title: string;
+  tagline: string;
+  location: string;
+  bio: string;
+  skills: string[];
+}
 
 function FloatingOrb({ delay, size, color, top, left }: { delay: number; size: string; color: string; top: string; left: string }) {
   return (
@@ -15,10 +25,12 @@ function FloatingOrb({ delay, size, color, top, left }: { delay: number; size: s
 export default function Hero() {
   const [loaded, setLoaded] = useState(false);
   const [showContent, setShowContent] = useState(false);
+  const [profile, setProfile] = useState<Profile | null>(null);
 
   useEffect(() => {
     setLoaded(true);
     setTimeout(() => setShowContent(true), 200);
+    getProfile().then(setProfile).catch(() => {});
   }, []);
 
   return (
@@ -41,7 +53,7 @@ export default function Hero() {
             <div className="absolute inset-2 rounded-2xl overflow-hidden">
               <Image
                 src="/profile.jpeg"
-                alt="MD ALAHI MONDOL"
+                alt={profile?.name || "MD ALAHI MONDOL"}
                 fill
                 className="rounded-2xl object-cover transition-all duration-700 brightness-90 contrast-110 saturate-75 group-hover:brightness-100 group-hover:contrast-100 group-hover:saturate-100"
                 priority
@@ -59,25 +71,26 @@ export default function Hero() {
           </div>
 
           <h1 className="mb-4 text-5xl font-extrabold tracking-tight text-white sm:text-6xl lg:text-7xl xl:text-8xl">
-            MD ALAHI <span className="glow-text">MONDOL</span>
+            {profile?.name?.split(" ").slice(0, 2).join(" ") || "MD ALAHI"}{" "}
+            <span className="glow-text">{profile?.name?.split(" ").slice(2).join(" ") || "MONDOL"}</span>
           </h1>
 
           <div className="mb-6 flex items-center justify-center gap-3">
             <div className="h-px w-12 bg-gradient-to-r from-transparent to-cyan-500/50" />
             <p className="text-xl font-semibold text-cyan-400 sm:text-2xl lg:text-3xl">
-              Graduate Psychologist / Research Consultant
+              {profile?.title || "Graduate Psychologist / Research Consultant"}
             </p>
             <div className="h-px w-12 bg-gradient-to-l from-transparent to-cyan-500/50" />
           </div>
 
           <p className="mx-auto mb-8 max-w-2xl text-lg text-slate-400 italic leading-relaxed">
-            &ldquo;Bridging academic excellence in Psychology with data-driven behavioral insights.&rdquo;
+            &ldquo;{profile?.tagline || "Bridging academic excellence in Psychology with data-driven behavioral insights."}&rdquo;
           </p>
 
           <div className="mb-10 flex items-center justify-center gap-6 text-sm text-slate-500">
             <div className="flex items-center gap-2">
               <MapPin className="h-4 w-4 text-cyan-500" />
-              <span>Kurigram / Dhaka, Bangladesh</span>
+              <span>{profile?.location || "Kurigram / Dhaka, Bangladesh"}</span>
             </div>
             <div className="h-4 w-px bg-slate-700" />
             <span>Available for opportunities</span>

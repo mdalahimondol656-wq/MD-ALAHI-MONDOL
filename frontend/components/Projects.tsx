@@ -1,43 +1,29 @@
 "use client";
 import { useEffect, useState } from "react";
 import { Brain, Search, Users, Briefcase, Star, Target, BarChart3, FileText, Handshake, Activity, Compass, BookOpen, Lightbulb, Zap, Eye, Award } from "lucide-react";
+import { getProjects } from "@/lib/api";
 
-const projectGroups = [
-  {
-    category: "Clinical & Counseling",
-    color: "cyan",
-    icon: Brain,
-    items: [
-      { title: "Counseling Frameworks", desc: "Applied structured counseling approaches in field settings with case documentation and behavioral tracking.", icon: Handshake },
-      { title: "Behavioral Analysis", desc: "Observed and documented behavioral patterns across diverse populations using standardized assessment tools.", icon: Eye },
-      { title: "Child Development Assessment", desc: "Evaluated developmental milestones and learning behaviors in educational settings.", icon: Activity },
-    ],
-  },
-  {
-    category: "Research & Analytics",
-    color: "blue",
-    icon: Search,
-    items: [
-      { title: "Field Data Collection", desc: "Designed and executed data collection protocols for psychological studies with rigorous methodology.", icon: Target },
-      { title: "Psychological Project Design", desc: "Formulated research methodologies, compiled field data, and performed analytical reviews on behavioral subsets.", icon: Lightbulb },
-      { title: "Academic Reporting", desc: "Produced structured academic reports with evidence-based findings and recommendations.", icon: FileText },
-    ],
-  },
-  {
-    category: "Corporate & Social",
-    color: "teal",
-    icon: Users,
-    items: [
-      { title: "Industrial-Organizational Psychology", desc: "Applied organizational behavior principles to workplace dynamics and team performance analysis.", icon: Briefcase },
-      { title: "Positive Psychology Frameworks", desc: "Utilized strengths-based approaches to promote well-being and resilience in organizational settings.", icon: Star },
-      { title: "Social Psychology Dynamics", desc: "Analyzed group behavior, social influence, and interpersonal dynamics in structured environments.", icon: Compass },
-    ],
-  },
-];
+interface ProjectItem {
+  id: number;
+  title: string;
+  desc: string;
+}
+
+interface ProjectGroup {
+  category: string;
+  color: string;
+  icon: string;
+  items: ProjectItem[];
+}
+
+const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+  Brain, Search, Users, Briefcase, Star, Target, BarChart3, FileText, Handshake, Activity, Compass, BookOpen, Lightbulb, Zap, Eye, Award
+};
 
 export default function Projects() {
   const [visible, setVisible] = useState(false);
   const [expandedCard, setExpandedCard] = useState<number | null>(null);
+  const [projectGroups, setProjectGroups] = useState<ProjectGroup[]>([]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -47,6 +33,18 @@ export default function Projects() {
     const el = document.getElementById("projects");
     if (el) observer.observe(el);
     return () => { if (el) observer.unobserve(el); };
+  }, []);
+
+  useEffect(() => {
+    getProjects().then((data) => {
+      const groups: ProjectGroup[] = Object.entries(data).map(([category, items], i) => ({
+        category,
+        color: ["cyan", "blue", "teal"][i % 3],
+        icon: Object.keys(iconMap)[i % Object.keys(iconMap).length],
+        items: (items as ProjectItem[]).map((item, j) => ({ ...item, id: i * 100 + j })),
+      }));
+      setProjectGroups(groups);
+    }).catch(() => {});
   }, []);
 
   const colorMap: Record<string, string> = {
@@ -77,40 +75,43 @@ export default function Projects() {
         </div>
 
         <div className="mt-16 space-y-16">
-          {projectGroups.map((group, i) => (
-            <div key={i}>
-              <h3 className={`mb-8 flex items-center justify-center gap-3 text-sm font-bold uppercase tracking-widest ${textColorMap[group.color]}`}>
-                <group.icon className="h-5 w-5" />
-                {group.category}
-              </h3>
-              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                {group.items.map((item, j) => {
-                  const cardIndex = i * 3 + j;
-                  const isExpanded = expandedCard === cardIndex;
-                  return (
-                    <div
-                      key={j}
-                      className={`fade-in-up glass-card p-6 transition-all duration-500 hover:-translate-y-1 hover:shadow-xl hover:shadow-black/30 cursor-pointer ${visible ? "visible" : ""} ${isExpanded ? "border-cyan-500/40 bg-white/[0.06]" : ""}`}
-                      style={{ transitionDelay: `${(i * 3 + j) * 100}ms` }}
-                      onClick={() => setExpandedCard(isExpanded ? null : cardIndex)}
-                    >
-                      <div className={`mb-4 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br ${colorMap[group.color]} text-lg`}>
-                        <item.icon className="h-5 w-5" />
+          {projectGroups.map((group, i) => {
+            const GroupIcon = iconMap[group.icon] || Star;
+            return (
+              <div key={i}>
+                <h3 className={`mb-8 flex items-center justify-center gap-3 text-sm font-bold uppercase tracking-widest ${textColorMap[group.color]}`}>
+                  <GroupIcon className="h-5 w-5" />
+                  {group.category}
+                </h3>
+                <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                  {group.items.map((item, j) => {
+                    const cardIndex = i * 3 + j;
+                    const isExpanded = expandedCard === cardIndex;
+                    return (
+                      <div
+                        key={item.id}
+                        className={`fade-in-up glass-card p-6 transition-all duration-500 hover:-translate-y-1 hover:shadow-xl hover:shadow-black/30 cursor-pointer ${visible ? "visible" : ""} ${isExpanded ? "border-cyan-500/40 bg-white/[0.06]" : ""}`}
+                        style={{ transitionDelay: `${(i * 3 + j) * 100}ms` }}
+                        onClick={() => setExpandedCard(isExpanded ? null : cardIndex)}
+                      >
+                        <div className={`mb-4 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br ${colorMap[group.color]} text-lg`}>
+                          <GroupIcon className="h-5 w-5" />
+                        </div>
+                        <div className="flex items-start justify-between gap-2">
+                          <h4 className="text-sm font-bold text-white flex-1">{item.title}</h4>
+                          <span className={`mt-0.5 h-2 w-2 rounded-full ${dotColorMap[group.color]} shadow-lg`} />
+                        </div>
+                        <p className={`mt-2 text-sm leading-relaxed text-slate-400 transition-all duration-300 ${isExpanded ? "" : "line-clamp-2"}`}>{item.desc}</p>
+                        <div className={`mt-3 flex items-center gap-1 text-xs text-cyan-400 transition-all duration-300 ${isExpanded ? "opacity-100" : "opacity-0"}`}>
+                          <span className="font-medium">Click to collapse</span>
+                        </div>
                       </div>
-                      <div className="flex items-start justify-between gap-2">
-                        <h4 className="text-sm font-bold text-white flex-1">{item.title}</h4>
-                        <span className={`mt-0.5 h-2 w-2 rounded-full ${dotColorMap[group.color]} shadow-lg`} />
-                      </div>
-                      <p className={`mt-2 text-sm leading-relaxed text-slate-400 transition-all duration-300 ${isExpanded ? "" : "line-clamp-2"}`}>{item.desc}</p>
-                      <div className={`mt-3 flex items-center gap-1 text-xs text-cyan-400 transition-all duration-300 ${isExpanded ? "opacity-100" : "opacity-0"}`}>
-                        <span className="font-medium">Click to collapse</span>
-                      </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         <div className="mt-20 fade-in-up glass-card p-8 glow-teal">

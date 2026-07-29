@@ -49,8 +49,10 @@ def verify_token(token: str) -> str:
 
 
 def get_current_admin(credentials: HTTPAuthorizationCredentials = Depends(security), db: Session = Depends(get_db)):
-    token = verify_token(credentials.credentials)
-    user = db.query(AdminUser).filter(AdminUser.username == token.split(":")[0]).first()
+    raw_token = credentials.credentials.split(":")[1] if ":" in credentials.credentials else credentials.credentials
+    token = verify_token(raw_token)
+    username = credentials.credentials.split(":")[0] if ":" in credentials.credentials else token
+    user = db.query(AdminUser).filter(AdminUser.username == username).first()
     if not user or not user.is_active:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Admin not found or inactive")
     return user
@@ -79,7 +81,7 @@ app = FastAPI(title="MD ALAHI MONDOL — CV Portfolio API", version="2.0.0", lif
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:3001", "https://your-vercel-app.vercel.app"],
+    allow_origins=["http://localhost:3000", "http://localhost:3001", "https://your-vercel-app.vercel.app", "https://md-alahi-mondol.vercel.app"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

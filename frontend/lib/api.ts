@@ -1,6 +1,31 @@
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "/api";
 
-// Public
+// Public fetchers
+export async function getProfile() {
+  const res = await fetch(`${API_BASE}/profile`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to fetch profile");
+  return res.json();
+}
+
+export async function getEducation() {
+  const res = await fetch(`${API_BASE}/education`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to fetch education");
+  return res.json();
+}
+
+export async function getExperiences() {
+  const res = await fetch(`${API_BASE}/experiences`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to fetch experiences");
+  return res.json();
+}
+
+export async function getProjects() {
+  const res = await fetch(`${API_BASE}/projects`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to fetch projects");
+  return res.json();
+}
+
+// Contact
 export async function submitContact(data: { name: string; email: string; message: string }) {
   const res = await fetch(`${API_BASE}/contact`, {
     method: "POST",
@@ -210,5 +235,16 @@ export async function deleteContactAdmin(token: string, id: number) {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) throw new Error("Failed to delete contact");
+  return res.json();
+}
+
+// Admin - Profile
+export async function updateProfileAdmin(token: string, data: any) {
+  const res = await fetch(`${API_BASE}/admin/profile`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error("Failed to update profile");
   return res.json();
 }
