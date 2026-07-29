@@ -20,7 +20,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <CustomCursor />
         <ScrollAnimations />
         <Navbar />
-        <main className="flex-1">{children}</main>
+        <main className="flex-1 md:ml-[72px]">{children}</main>
         <BackToTop />
         <Footer />
       </body>
