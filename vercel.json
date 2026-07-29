@@ -1,19 +1,29 @@
 {
-    "builds": [
-        {
-            "src": "api/index.py",
-            "use": "@vercel/python"
-        }
-    ],
-    "functions": {
-        "api/index.py": {
-            "includeFiles": "backend/**"
+    "services": {
+        "frontend": {
+            "root": "frontend",
+            "framework": "nextjs"
+        },
+        "backend": {
+            "root": "backend",
+            "entrypoint": "main.py",
+            "framework": "python"
         }
     },
     "rewrites": [
         {
             "source": "/api/(.*)",
-            "destination": "/api/index"
+            "destination": {
+                "type": "service",
+                "service": "backend"
+            }
+        },
+        {
+            "source": "/(.*)",
+            "destination": {
+                "type": "service",
+                "service": "frontend"
+            }
         }
     ]
 }

@@ -11,7 +11,18 @@ export default function Contact() {
   const [contactInfo, setContactInfo] = useState<any>(null);
 
   useEffect(() => {
-    getContactInfo().then(setContactInfo).catch(() => {});
+    getContactInfo().then(setContactInfo).catch(() => setContactInfo({
+      phones: ["01770 340 226", "0151 895 1529"],
+      emails: ["mondolmdalahe1880@gmail.com", "dwlaha9@gmail.com"],
+      dob: "November 02, 1999",
+      nationality: "Bangladeshi",
+      socials: {
+        instagram: "https://www.instagram.com/mdalahimondol",
+        linkedin: "https://www.linkedin.com/in/md-alahi-914b13285",
+        github: "https://github.com/mdalahimondol",
+        email: "mailto:mondolmdalahe1880@gmail.com",
+      }
+    }));
   }, []);
 
   useEffect(() => {

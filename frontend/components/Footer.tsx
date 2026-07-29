@@ -8,7 +8,12 @@ export default function Footer() {
   const [socials, setSocials] = useState<any>({});
 
   useEffect(() => {
-    getContactInfo().then((data) => setSocials(data.socials || {})).catch(() => {});
+    getContactInfo().then((data) => setSocials(data.socials || {})).catch(() => setSocials({
+      instagram: "https://www.instagram.com/mdalahimondol",
+      linkedin: "https://www.linkedin.com/in/md-alahi-914b13285",
+      github: "https://github.com/mdalahimondol",
+      email: "mailto:mondolmdalahe1880@gmail.com",
+    }));
   }, []);
 
   const scrollToTop = () => {

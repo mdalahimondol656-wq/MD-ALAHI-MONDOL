@@ -22,13 +22,20 @@ const colorMap: Record<string, string> = {
   teal: "text-teal-400 bg-teal-500/10 border-teal-500/20",
 };
 
+const fallbackStats: Stat[] = [
+  { label: "CGPA", value: 3.10, suffix: "/4.00", icon: "GraduationCap", color: "cyan" },
+  { label: "Experience", value: 2, suffix: "+ Years", icon: "Briefcase", color: "blue" },
+  { label: "Projects", value: 10, suffix: "+", icon: "Award", color: "teal" },
+  { label: "Skills", value: 15, suffix: "+", icon: "TrendingUp", color: "cyan" },
+];
+
 export default function Stats() {
   const [visible, setVisible] = useState(false);
   const [stats, setStats] = useState<Stat[]>([]);
   const countersRef = useRef<Record<string, number>>({});
 
   useEffect(() => {
-    getStats().then(setStats).catch(() => {});
+    getStats().then(setStats).catch(() => setStats(fallbackStats));
   }, []);
 
   useEffect(() => {
