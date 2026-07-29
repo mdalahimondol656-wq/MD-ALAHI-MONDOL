@@ -10,6 +10,7 @@ import {
   getAdminMe, getEducationAdmin, createEducationAdmin, updateEducationAdmin, deleteEducationAdmin,
   getExperiencesAdmin, createExperienceAdmin, updateExperienceAdmin, deleteExperienceAdmin,
   getProjectGroupsAdmin, createProjectGroupAdmin, updateProjectGroupAdmin, deleteProjectGroupAdmin,
+  getProjectItemsAdmin, createProjectItemAdmin, updateProjectItemAdmin, deleteProjectItemAdmin,
   getContactsAdmin, deleteContactAdmin, adminLogout,
   getProfile, updateProfileAdmin
 } from "@/lib/api";
@@ -731,7 +732,7 @@ function ProjectsTab({ data, onRefresh, showNotification }: { data: any[]; onRef
                     <button onClick={() => handleAddItem(group.id)} disabled={saving} className="px-2 py-1 rounded bg-cyan-500/20 text-cyan-400 text-xs hover:bg-cyan-500/30">
                       {saving ? "..." : "Save"}
                     </button>
-                    <button onClick={() => setNewItemGroupId(null)} className="px-2 py-1 rounded bg-white/5 text-slate-400 text-xs hover:bg-white/10">
+                    <button onClick={() => setEditingItemId(null)} className="px-2 py-1 rounded bg-white/5 text-slate-400 text-xs hover:bg-white/10">
                       Cancel
                     </button>
                   </div>
