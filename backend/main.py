@@ -72,6 +72,55 @@ async def lifespan(_app: FastAPI):
             )
             db.add(admin)
             db.commit()
+
+        if db.query(Education).count() == 0:
+            edu_data = [
+                {"level": "Master of Science (M.Sc.) in Psychology", "institution": "University of Dhaka (Affiliated Dhaka College)", "period": "2022 - 2023", "detail": "Graduated March 2025 | Final CGPA: 3.10 / 4.00", "modules": "Clinical & Counseling Psychology, Industrial-Organizational Psychology, Environmental Psychology, Child Development & Disabilities, Advanced Social Psychology, School Psychology", "sort_order": 0},
+                {"level": "Bachelor of Science (B.Sc. Honours) in Psychology", "institution": "University of Dhaka (Affiliated Dhaka College)", "period": "2018 - 2019", "detail": "Graduated May 2024 | Final CGPA: 2.96 / 4.00 (4th Year GPA: 2.93)", "modules": "Positive Psychology, Personality Psychology, Theories of Learning, History & Systems in Psychology, Cognitive Psychology, Educational Psychology", "sort_order": 1},
+                {"level": "Higher Secondary Certificate (HSC)", "institution": "Lalmonirhat Govt. College, Lalmonirhat", "period": "2016 - 2018", "detail": "Board: Dinajpur | Group: Humanities | GPA: 3.50 / 5.00", "modules": "", "sort_order": 2},
+                {"level": "Secondary School Certificate (SSC)", "institution": "Phulkha Adarsha High School, Kurigram", "period": "2014 - 2016", "detail": "Board: Dinajpur | Group: Science | GPA: 4.00 / 5.00", "modules": "", "sort_order": 3},
+            ]
+            for d in edu_data:
+                db.add(Education(**d))
+            db.commit()
+
+        if db.query(Experience).count() == 0:
+            exp_data = [
+                {"role": "Graduate Intern in Psychology Department", "institution": "University of Dhaka", "period": "M.Sc. Requirement", "detail": "Grade: A (Excellent) | Grade Point: 3.75", "description": "Applied theoretical psychological frameworks in active field settings, managed case data, and observed practical behavioral interventions.", "sort_order": 0},
+                {"role": "Independent Research Project", "institution": "University of Dhaka", "period": "Academic Project", "detail": "Grade: A+ (Outstanding) | Grade Point: 4.00", "description": "Formulated research methodologies, compiled field data, performed analytical reviews on behavioral subsets, and defended project findings before the academic board.", "sort_order": 1},
+            ]
+            for d in exp_data:
+                db.add(Experience(**d))
+            db.commit()
+
+        if db.query(ProjectGroup).count() == 0:
+            grp_data = [
+                {"category": "Clinical & Counseling", "color": "cyan", "icon": "Star", "sort_order": 0},
+                {"category": "Research & Analytics", "color": "blue", "icon": "Briefcase", "sort_order": 1},
+                {"category": "Corporate & Social", "color": "teal", "icon": "Folder", "sort_order": 2},
+            ]
+            for d in grp_data:
+                db.add(ProjectGroup(**d))
+            db.commit()
+            db.refresh(db.query(ProjectGroup).order_by(ProjectGroup.sort_order).all())
+
+        if db.query(ProjectItem).count() == 0:
+            groups = db.query(ProjectGroup).order_by(ProjectGroup.sort_order).all()
+            group_ids = [g.id for g in groups]
+            items = [
+                {"title": "Counseling Frameworks", "desc": "Applied structured counseling approaches in field settings with case documentation and behavioral tracking.", "group_id": group_ids[0]},
+                {"title": "Behavioral Analysis", "desc": "Observed and documented behavioral patterns across diverse populations using standardized assessment tools.", "group_id": group_ids[0]},
+                {"title": "Child Development Assessment", "desc": "Evaluated developmental milestones and learning behaviors in educational settings.", "group_id": group_ids[0]},
+                {"title": "Field Data Collection", "desc": "Designed and executed data collection protocols for psychological studies with rigorous methodology.", "group_id": group_ids[1]},
+                {"title": "Psychological Project Design", "desc": "Formulated research methodologies, compiled field data, and performed analytical reviews on behavioral subsets.", "group_id": group_ids[1]},
+                {"title": "Academic Reporting", "desc": "Produced structured academic reports with evidence-based findings and recommendations.", "group_id": group_ids[1]},
+                {"title": "Industrial-Organizational Psychology", "desc": "Applied organizational behavior principles to workplace dynamics and team performance analysis.", "group_id": group_ids[2]},
+                {"title": "Positive Psychology Frameworks", "desc": "Utilized strengths-based approaches to promote well-being and resilience in organizational settings.", "group_id": group_ids[2]},
+                {"title": "Social Psychology Dynamics", "desc": "Analyzed group behavior, social influence, and interpersonal dynamics in structured environments.", "group_id": group_ids[2]},
+            ]
+            for d in items:
+                db.add(ProjectItem(**d))
+            db.commit()
     finally:
         db.close()
     yield
@@ -81,7 +130,7 @@ app = FastAPI(title="MD ALAHI MONDOL — CV Portfolio API", version="2.0.0", lif
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:3001", "https://your-vercel-app.vercel.app", "https://md-alahi-mondol.vercel.app"],
+    allow_origins=["http://localhost:3000", "http://localhost:3001", "https://your-vercel-app.vercel.app", "https://md-alahi-mondol.vercel.app", "https://mdalahimondol656-2022.vercel.app"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -110,78 +159,25 @@ def get_profile():
 
 
 @app.get("/api/education")
-def get_education():
-    return [
-        {
-            "level": "Master of Science (M.Sc.) in Psychology",
-            "institution": "University of Dhaka (Affiliated Dhaka College)",
-            "period": "2022 - 2023",
-            "detail": "Graduated March 2025 | Final CGPA: 3.10 / 4.00",
-            "modules": "Clinical & Counseling Psychology, Industrial-Organizational Psychology, Environmental Psychology, Child Development & Disabilities, Advanced Social Psychology, School Psychology",
-        },
-        {
-            "level": "Bachelor of Science (B.Sc. Honours) in Psychology",
-            "institution": "University of Dhaka (Affiliated Dhaka College)",
-            "period": "2018 - 2019",
-            "detail": "Graduated May 2024 | Final CGPA: 2.96 / 4.00 (4th Year GPA: 2.93)",
-            "modules": "Positive Psychology, Personality Psychology, Theories of Learning, History & Systems in Psychology, Cognitive Psychology, Educational Psychology",
-        },
-        {
-            "level": "Higher Secondary Certificate (HSC)",
-            "institution": "Lalmonirhat Govt. College, Lalmonirhat",
-            "period": "2016 - 2018",
-            "detail": "Board: Dinajpur | Group: Humanities | GPA: 3.50 / 5.00",
-            "modules": "",
-        },
-        {
-            "level": "Secondary School Certificate (SSC)",
-            "institution": "Phulkha Adarsha High School, Kurigram",
-            "period": "2014 - 2016",
-            "detail": "Board: Dinajpur | Group: Science | GPA: 4.00 / 5.00",
-            "modules": "",
-        },
-    ]
+def get_education(db: Session = Depends(get_db)):
+    items = db.query(Education).order_by(Education.sort_order).all()
+    return items
 
 
 @app.get("/api/experiences")
-def get_experiences():
-    return [
-        {
-            "role": "Graduate Intern — Psychology Department",
-            "institution": "University of Dhaka",
-            "period": "M.Sc. Requirement",
-            "detail": "Grade: A (Excellent) — Grade Point: 3.75",
-            "description": "Applied theoretical psychological frameworks in active field settings, managed case data, and observed practical behavioral interventions.",
-        },
-        {
-            "role": "Independent Research Project",
-            "institution": "University of Dhaka",
-            "period": "Academic Project",
-            "detail": "Grade: A+ (Outstanding) — Grade Point: 4.00",
-            "description": "Formulated research methodologies, compiled field data, performed analytical reviews on behavioral subsets, and defended project findings before the academic board.",
-        },
-    ]
+def get_experiences(db: Session = Depends(get_db)):
+    items = db.query(Experience).order_by(Experience.sort_order).all()
+    return items
 
 
 @app.get("/api/projects")
-def get_projects():
-    return {
-        "Clinical & Counseling": [
-            {"title": "Counseling Frameworks", "desc": "Applied structured counseling approaches in field settings with case documentation and behavioral tracking."},
-            {"title": "Behavioral Analysis", "desc": "Observed and documented behavioral patterns across diverse populations using standardized assessment tools."},
-            {"title": "Child Development Assessment", "desc": "Evaluated developmental milestones and learning behaviors in educational settings."},
-        ],
-        "Research & Analytics": [
-            {"title": "Field Data Collection", "desc": "Designed and executed data collection protocols for psychological studies with rigorous methodology."},
-            {"title": "Psychological Project Design", "desc": "Formulated research methodologies, compiled field data, and performed analytical reviews on behavioral subsets."},
-            {"title": "Academic Reporting", "desc": "Produced structured academic reports with evidence-based findings and recommendations."},
-        ],
-        "Corporate & Social": [
-            {"title": "Industrial-Organizational Psychology", "desc": "Applied organizational behavior principles to workplace dynamics and team performance analysis."},
-            {"title": "Positive Psychology Frameworks", "desc": "Utilized strengths-based approaches to promote well-being and resilience in organizational settings."},
-            {"title": "Social Psychology Dynamics", "desc": "Analyzed group behavior, social influence, and interpersonal dynamics in structured environments."},
-        ],
-    }
+def get_projects(db: Session = Depends(get_db)):
+    groups = db.query(ProjectGroup).order_by(ProjectGroup.sort_order).all()
+    result = {}
+    for group in groups:
+        items = db.query(ProjectItem).filter(ProjectItem.group_id == group.id).all()
+        result[group.category] = [{"id": item.id, "title": item.title, "desc": item.desc} for item in items]
+    return result
 
 
 @app.post("/api/contact", response_model=ContactResponse)
