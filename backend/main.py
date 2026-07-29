@@ -8,7 +8,7 @@ import hashlib
 import secrets
 
 from database import Base, engine, get_db
-from models import ContactMessage, AdminUser
+from models import ContactMessage, AdminUser, Education, Experience, ProjectGroup, ProjectItem
 from schemas import (
     ContactCreate, ContactResponse,
     ProfileUpdate,
