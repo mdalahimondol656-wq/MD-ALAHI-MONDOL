@@ -6,7 +6,7 @@
         },
         "backend": {
             "root": "backend",
-            "entrypoint": "main.py",
+            "entrypoint": "main:app",
             "framework": "python"
         }
     },
@@ -14,14 +14,12 @@
         {
             "source": "/api/(.*)",
             "destination": {
-                "type": "service",
                 "service": "backend"
             }
         },
         {
             "source": "/(.*)",
             "destination": {
-                "type": "service",
                 "service": "frontend"
             }
         }
