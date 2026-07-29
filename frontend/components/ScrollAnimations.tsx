@@ -14,11 +14,24 @@ export default function ScrollAnimations() {
       { threshold: 0.1, rootMargin: "0px 0px -40px 0px" }
     );
 
-    const elements = document.querySelectorAll(".fade-in-up");
-    elements.forEach((el) => observer.observe(el));
+    const observeElements = () => {
+      document.querySelectorAll(".fade-in-up:not(.observed)").forEach((el) => {
+        el.classList.add("observed");
+        observer.observe(el);
+      });
+    };
+
+    observeElements();
+
+    const mutationObserver = new MutationObserver(() => {
+      observeElements();
+    });
+
+    mutationObserver.observe(document.body, { childList: true, subtree: true });
 
     return () => {
-      elements.forEach((el) => observer.unobserve(el));
+      observer.disconnect();
+      mutationObserver.disconnect();
     };
   }, []);
 

@@ -84,8 +84,7 @@ export default function AdminDashboard() {
   };
 
   const refreshData = () => {
-    setLoading(true);
-    loadData(getToken()).then(() => setLoading(false));
+    loadData(getToken());
   };
 
   const navItems: { id: Section; label: string; icon: React.ReactNode; count?: number }[] = [
