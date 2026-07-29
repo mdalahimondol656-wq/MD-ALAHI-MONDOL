@@ -10,7 +10,7 @@
 
 **Graduate Psychologist / Research Consultant**
 
-[Live Demo](https://client-profile-1.vercel.app) • [API Docs](https://vercel.com/rhsandev-s-projects/client-profile-1) • [GitHub](https://github.com/mdalahimondol656-wq/MD-ALAHI-MONDOL)
+[Live Demo](https://mdalahimondol656-2022.vercel.app) • [API Docs](https://vercel.com/rbkhan007s-projects/mdalahimondol656-2022) • [GitHub](https://github.com/mdalahimondol656-wq/MD-ALAHI-MONDOL)
 
 </div>
 
