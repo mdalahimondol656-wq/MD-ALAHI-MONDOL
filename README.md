@@ -10,7 +10,7 @@
 
 **Graduate Psychologist / Research Consultant**
 
-[Live Demo](https://mdalahimondol656-2022.vercel.app) • [API Docs](https://vercel.com/rbkhan007s-projects/mdalahimondol656-2022) • [GitHub](https://github.com/mdalahimondol656-wq/MD-ALAHI-MONDOL)
+[Live Demo](https://mdalahimondol656-2022.vercel.app) • [Admin Dashboard](https://mdalahimondol656-2022.vercel.app/admin/login) • [API Docs](https://vercel.com/rbkhan007s-projects/mdalahimondol656-2022) • [GitHub](https://github.com/mdalahimondol656-wq/MD-ALAHI-MONDOL)
 
 </div>
 
@@ -184,6 +184,7 @@ graph LR
 | **Experience** | Clinic Operation Manager + Junior Officer roles |
 | **Skills** | Clinical & Counseling, Research & Analytics, Corporate & Social + Soft Skills |
 | **Contact** | Contact form + info panel (phone, email, social links) |
+| **Admin Dashboard** | Full CRUD for all content (education, experience, projects, contacts, profile) |
 
 ---
 
@@ -243,18 +244,20 @@ docker-compose up --build
 
 ## API Reference
 
+### Public Endpoints (No Auth Required)
+
 ```mermaid
 graph LR
     Client[Frontend]
-    
-    subgraph API["FastAPI Backend"]
+
+    subgraph API["FastAPI Backend - Public"]
         P1[GET /api/profile]
         P2[GET /api/education]
         P3[GET /api/experiences]
         P4[GET /api/projects]
         P5[POST /api/contact]
     end
-    
+
     DB[(PostgreSQL)]
 
     Client -->|fetch| P1
@@ -265,8 +268,6 @@ graph LR
     P5 -->|write| DB
 ```
 
-### Endpoints
-
 | Method | Endpoint | Description | Response |
 |--------|----------|-------------|----------|
 | `GET` | `/api/profile` | Profile data | `{ name, title, tagline, location, bio, skills }` |
@@ -275,17 +276,45 @@ graph LR
 | `GET` | `/api/projects` | Skills by category | `{ "Clinical & Counseling": [...], ... }` |
 | `POST` | `/api/contact` | Submit message | `{ id, name, email, message, created_at }` |
 
-### Example Request
+### Admin Endpoints (Auth Required)
 
-```bash
-curl -X POST https://your-backend.vercel.app/api/contact \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "John Doe",
-    "email": "john@example.com",
-    "message": "Hello, I would like to connect!"
-  }'
+All admin endpoints require a Bearer token obtained via `POST /api/admin/login`.
+
+```mermaid
+graph LR
+    Admin[Admin Browser]
+
+    subgraph AdminAPI["FastAPI Backend - Admin"]
+        A1[POST /api/admin/login]
+        A2[GET /api/admin/me]
+        A3[POST /api/admin/logout]
+        A4[PUT /api/admin/profile]
+        A5[CRUD /api/admin/education]
+        A6[CRUD /api/admin/experiences]
+        A7[CRUD /api/admin/projects]
+        A8[CRUD /api/admin/projects/:id/items]
+        A9[GET /api/admin/contacts]
+        A10[DELETE /api/admin/contacts/:id]
+    end
+
+    Admin -->|Bearer token| A1
+    Admin -->|Bearer token| A2
+    Admin -->|Bearer token| A3
+    Admin -->|Bearer token| A4
+    Admin -->|Bearer token| A5
+    Admin -->|Bearer token| A6
+    Admin -->|Bearer token| A7
+    Admin -->|Bearer token| A8
+    Admin -->|Bearer token| A9
+    Admin -->|Bearer token| A10
 ```
+
+### Admin Access
+
+- **URL**: `https://mdalahimondol656-2022.vercel.app/admin/login`
+- **Default credentials**: `admin` / `admin123`
+- **Token format**: `admin:<random_token>` stored in `localStorage` as `admin_token`
+- **Session duration**: 12 hours
 
 ---
 
@@ -358,24 +387,43 @@ graph TD
 
 ### Vercel (Recommended)
 
+The project is deployed as a monorepo with two services (frontend + backend) configured via `vercel.json`.
+
 ```bash
 # Install Vercel CLI
 npm install -g vercel
 
-# Login
-vercel login
+# Link to project (first time only)
+vercel link
 
-# Deploy
+# Deploy to production
 vercel deploy --prod
 ```
 
+### Monorepo Services (`vercel.json`)
+
+| Service | Root | Framework | Purpose |
+|---------|------|-----------|---------|
+| `frontend` | `frontend/` | Next.js | Website and admin dashboard |
+| `backend` | `backend/` | Python | FastAPI REST API |
+
+- `/api/*` routes are rewritten to the backend service
+- All other routes are served by the frontend service
+- In production, the frontend uses relative `/api` URLs (no `NEXT_PUBLIC_API_URL` needed)
+
 ### Environment Variables
 
-Set these in Vercel Dashboard → Settings → Environment Variables:
+| Variable | Production | Development |
+|----------|-----------|-------------|
+| `NEXT_PUBLIC_API_URL` | Not set (uses `/api`) | `http://localhost:8000` |
+| `DATABASE_URL` | Set in Vercel → Settings → Env Variables | Set in `backend/.env` |
 
-```env
-NEXT_PUBLIC_API_URL=https://your-backend.vercel.app
-```
+### Admin Dashboard
+
+- **URL**: `https://mdalahimondol656-2022.vercel.app/admin/login`
+- **Default credentials**: `admin` / `admin123`
+- **Token**: Stored in `localStorage` as `admin_token`
+- **Session**: 12 hours
 
 ### Docker
 
