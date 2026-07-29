@@ -1,9 +1,10 @@
+import jwt
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import hashlib
 import secrets
 
@@ -22,10 +23,8 @@ from schemas import (
 security = HTTPBearer()
 
 SECRET_KEY = "cv-portfolio-admin-secret-key-change-in-production-2024"
-ALGORITHM = "sha256"
-SESSION_DURATION = timedelta(hours=12)
-
-active_tokens: dict[str, datetime] = {}
+ALGORITHM = "HS256"
+SESSION_DURATION_MINUTES = 720
 
 
 def hash_password(password: str) -> str:
@@ -33,25 +32,26 @@ def hash_password(password: str) -> str:
 
 
 def create_token(username: str) -> str:
-    token = secrets.token_urlsafe(32)
-    expires = datetime.now() + SESSION_DURATION
-    active_tokens[token] = expires
-    return token
+    expire = datetime.now(timezone.utc) + timedelta(minutes=SESSION_DURATION_MINUTES)
+    payload = {"sub": username, "exp": expire, "iat": datetime.now(timezone.utc)}
+    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
 
 def verify_token(token: str) -> str:
-    if token not in active_tokens:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired token")
-    if datetime.now() > active_tokens[token]:
-        del active_tokens[token]
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username = payload.get("sub")
+        if username is None:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+        return username
+    except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token expired")
-    return token
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
 
 
 def get_current_admin(credentials: HTTPAuthorizationCredentials = Depends(security), db: Session = Depends(get_db)):
-    raw_token = credentials.credentials.split(":")[1] if ":" in credentials.credentials else credentials.credentials
-    token = verify_token(raw_token)
-    username = credentials.credentials.split(":")[0] if ":" in credentials.credentials else token
+    username = verify_token(credentials.credentials)
     user = db.query(AdminUser).filter(AdminUser.username == username).first()
     if not user or not user.is_active:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Admin not found or inactive")
@@ -201,14 +201,11 @@ def admin_login(payload: AdminLogin, db: Session = Depends(get_db)):
     if not user or not user.verify_password(payload.password):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
     token = create_token(user.username)
-    active_tokens[token] = datetime.now() + SESSION_DURATION
-    return AdminToken(access_token=f"{user.username}:{token}")
+    return AdminToken(access_token=token)
 
 
 @app.post("/api/admin/logout")
-def admin_logout(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    token = credentials.credentials.split(":")[1] if ":" in credentials.credentials else credentials.credentials
-    active_tokens.pop(token, None)
+def admin_logout():
     return {"message": "Logged out"}
 
 
