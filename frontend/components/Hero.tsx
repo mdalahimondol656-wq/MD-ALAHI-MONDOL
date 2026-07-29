@@ -22,16 +22,18 @@ function FloatingOrb({ delay, size, color, top, left }: { delay: number; size: s
   );
 }
 
-export default function Hero() {
+export default function Hero({ initialProfile }: { initialProfile?: Profile | null }) {
   const [loaded, setLoaded] = useState(false);
   const [showContent, setShowContent] = useState(false);
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(initialProfile || null);
 
   useEffect(() => {
     setLoaded(true);
     setTimeout(() => setShowContent(true), 200);
-    getProfile().then(setProfile).catch(() => {});
-  }, []);
+    if (!initialProfile) {
+      getProfile().then(setProfile).catch(() => {});
+    }
+  }, [initialProfile]);
 
   return (
     <section id="hero" className="relative flex min-h-screen items-center justify-center overflow-hidden">

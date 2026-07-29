@@ -1,6 +1,6 @@
 import os
 from dotenv import load_dotenv
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
 load_dotenv()
@@ -22,7 +22,10 @@ engine = create_engine(
     pool_pre_ping=True,
     pool_size=2,
     max_overflow=0,
+    pool_recycle=300,
+    pool_timeout=10,
 )
+
 SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 
 

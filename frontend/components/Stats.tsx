@@ -29,14 +29,15 @@ const fallbackStats: Stat[] = [
   { label: "Skills", value: 15, suffix: "+", icon: "TrendingUp", color: "cyan" },
 ];
 
-export default function Stats() {
+export default function Stats({ initialStats }: { initialStats?: Stat[] }) {
   const [visible, setVisible] = useState(false);
-  const [stats, setStats] = useState<Stat[]>([]);
+  const [stats, setStats] = useState<Stat[]>(initialStats?.length ? initialStats : []);
   const [displayValues, setDisplayValues] = useState<Record<string, number>>({});
 
   useEffect(() => {
+    if (initialStats?.length) return;
     getStats().then(setStats).catch(() => setStats(fallbackStats));
-  }, []);
+  }, [initialStats]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(

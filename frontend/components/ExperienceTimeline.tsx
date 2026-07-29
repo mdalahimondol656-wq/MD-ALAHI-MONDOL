@@ -33,11 +33,11 @@ const fallbackExperiences: ExperienceItem[] = [
   { id: 102, role: "Independent Research Project", institution: "University of Dhaka", period: "Academic Project", detail: "Grade: A+ (Outstanding) | Grade Point: 4.00", description: "Formulated research methodologies, compiled field data, performed analytical reviews on behavioral subsets, and defended project findings before the academic board." },
 ];
 
-export default function ExperienceTimeline() {
+export default function ExperienceTimeline({ initialEducation, initialExperiences }: { initialEducation?: EducationItem[]; initialExperiences?: ExperienceItem[] }) {
   const [visible, setVisible] = useState(false);
   const [activeTab, setActiveTab] = useState<"education" | "experience">("education");
-  const [education, setEducation] = useState<EducationItem[]>([]);
-  const [experiences, setExperiences] = useState<ExperienceItem[]>([]);
+  const [education, setEducation] = useState<EducationItem[]>(initialEducation?.length ? initialEducation : []);
+  const [experiences, setExperiences] = useState<ExperienceItem[]>(initialExperiences?.length ? initialExperiences : []);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -50,9 +50,13 @@ export default function ExperienceTimeline() {
   }, []);
 
   useEffect(() => {
-    getEducation().then(setEducation).catch(() => setEducation(fallbackEducation));
-    getExperiences().then(setExperiences).catch(() => setExperiences(fallbackExperiences));
-  }, []);
+    if (!initialEducation?.length) {
+      getEducation().then(setEducation).catch(() => setEducation(fallbackEducation));
+    }
+    if (!initialExperiences?.length) {
+      getExperiences().then(setExperiences).catch(() => setExperiences(fallbackExperiences));
+    }
+  }, [initialEducation, initialExperiences]);
 
   const items = activeTab === "education" ? education : experiences;
 

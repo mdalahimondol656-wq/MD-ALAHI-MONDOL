@@ -3,27 +3,29 @@ import { FormEvent, useState, useEffect } from "react";
 import { submitContact, getContactInfo } from "@/lib/api";
 import { Send, Mail, MapPin, Calendar, Globe, GitBranch, ArrowRight, CheckCircle, AlertCircle, Phone, Camera, ExternalLink } from "lucide-react";
 
-export default function Contact() {
+export default function Contact({ initialContactInfo }: { initialContactInfo?: any }) {
   const [form, setForm] = useState({ name: "", email: "", message: "" });
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
   const [touched, setTouched] = useState<Record<string, boolean>>({});
-  const [contactInfo, setContactInfo] = useState<any>(null);
+  const [contactInfo, setContactInfo] = useState<any>(initialContactInfo || null);
 
   useEffect(() => {
-    getContactInfo().then(setContactInfo).catch(() => setContactInfo({
-      phones: ["01770 340 226", "0151 895 1529"],
-      emails: ["mondolmdalahe1880@gmail.com", "dwlaha9@gmail.com"],
-      dob: "November 02, 1999",
-      nationality: "Bangladeshi",
-      socials: {
-        instagram: "https://www.instagram.com/mdalahimondol",
-        linkedin: "https://www.linkedin.com/in/md-alahi-914b13285",
-        github: "https://github.com/mdalahimondol",
-        email: "mailto:mondolmdalahe1880@gmail.com",
-      }
-    }));
-  }, []);
+    if (!initialContactInfo) {
+      getContactInfo().then(setContactInfo).catch(() => setContactInfo({
+        phones: ["01770 340 226", "0151 895 1529"],
+        emails: ["mondolmdalahe1880@gmail.com", "dwlaha9@gmail.com"],
+        dob: "November 02, 1999",
+        nationality: "Bangladeshi",
+        socials: {
+          instagram: "https://www.instagram.com/mdalahimondol",
+          linkedin: "https://www.linkedin.com/in/md-alahi-914b13285",
+          github: "https://github.com/mdalahimondol",
+          email: "mailto:mondolmdalahe1880@gmail.com",
+        }
+      }));
+    }
+  }, [initialContactInfo]);
 
   useEffect(() => {
     if (status === "success") {

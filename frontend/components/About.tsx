@@ -39,11 +39,11 @@ const fallbackSkills: Skill[] = [
   { name: "Empathy", level: 95, icon: MessageCircle, category: "Soft Skills" },
 ];
 
-export default function About() {
+export default function About({ initialProfile }: { initialProfile?: { bio?: string; skills?: string[] } | null }) {
   const [visible, setVisible] = useState(false);
   const [activeCategory, setActiveCategory] = useState("All");
   const [skills, setSkills] = useState<Skill[]>([]);
-  const [bio, setBio] = useState("");
+  const [bio, setBio] = useState(initialProfile?.bio || "");
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -56,6 +56,16 @@ export default function About() {
   }, []);
 
   useEffect(() => {
+    if (initialProfile?.skills?.length) {
+      const mapped = initialProfile.skills.map((name: string, i: number) => ({
+        name,
+        level: 75 + Math.min(i * 2, 20),
+        icon: Object.values(iconMap)[i % Object.values(iconMap).length],
+        category: i < 4 ? "Clinical" : i < 8 ? "Research" : i < 13 ? "Corporate" : "Soft Skills",
+      }));
+      setSkills(mapped);
+      return;
+    }
     getProfile().then((data) => {
       setBio(data.bio || "");
       const mapped = (data.skills || []).map((name: string, i: number) => ({
@@ -66,7 +76,7 @@ export default function About() {
       }));
       setSkills(mapped);
     }).catch(() => setSkills(fallbackSkills));
-  }, []);
+  }, [initialProfile]);
 
   const categories = Array.from(new Set(skills.map(s => s.category)));
   const filteredSkills = activeCategory === "All" ? skills : skills.filter(s => s.category === activeCategory);

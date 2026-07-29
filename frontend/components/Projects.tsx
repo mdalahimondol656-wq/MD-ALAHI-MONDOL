@@ -38,7 +38,7 @@ const fallbackGroups: ProjectGroup[] = [
   ]},
 ];
 
-export default function Projects() {
+export default function Projects({ initialProjects }: { initialProjects?: Record<string, ProjectItem[]> }) {
   const [visible, setVisible] = useState(false);
   const [expandedCard, setExpandedCard] = useState<number | null>(null);
   const [projectGroups, setProjectGroups] = useState<ProjectGroup[]>([]);
@@ -54,6 +54,16 @@ export default function Projects() {
   }, []);
 
   useEffect(() => {
+    if (initialProjects && Object.keys(initialProjects).length > 0) {
+      const groups: ProjectGroup[] = Object.entries(initialProjects).map(([category, items], i) => ({
+        category,
+        color: ["cyan", "blue", "teal"][i % 3],
+        icon: Object.keys(iconMap)[i % Object.keys(iconMap).length],
+        items: (items as ProjectItem[]).map((item, j) => ({ ...item, id: i * 100 + j })),
+      }));
+      setProjectGroups(groups);
+      return;
+    }
     getProjects().then((data) => {
       const groups: ProjectGroup[] = Object.entries(data).map(([category, items], i) => ({
         category,
@@ -63,7 +73,7 @@ export default function Projects() {
       }));
       setProjectGroups(groups);
     }).catch(() => setProjectGroups(fallbackGroups));
-  }, []);
+  }, [initialProjects]);
 
   const colorMap: Record<string, string> = {
     cyan: "from-cyan-500/20 to-cyan-600/5 border-cyan-500/20 hover:border-cyan-400/40",

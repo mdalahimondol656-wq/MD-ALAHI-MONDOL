@@ -27,6 +27,17 @@ SECRET_KEY = os.getenv("JWT_SECRET_KEY", "cv-portfolio-admin-secret-key-change-i
 ALGORITHM = "HS256"
 SESSION_DURATION_MINUTES = 720
 
+_cors_origins = os.getenv("CORS_ORIGINS", "").strip()
+if not _cors_origins:
+    _cors_origins_list = [
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "https://md-alahi-mondol.vercel.app",
+        "https://mdalahimondol656-2022.vercel.app",
+    ]
+else:
+    _cors_origins_list = [o.strip() for o in _cors_origins.split(",") if o.strip()]
+
 
 def hash_password(password: str) -> str:
     return hashlib.sha256(password.encode()).hexdigest()
@@ -199,7 +210,7 @@ def health_check():
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:3001,https://md-alahi-mondol.vercel.app,https://mdalahimondol656-2022.vercel.app").split(","),
+    allow_origins=_cors_origins_list,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
