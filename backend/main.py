@@ -1,8 +1,11 @@
 import jwt
 import os
+import time
+from collections import defaultdict
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import FastAPI, Depends, HTTPException, status, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta, timezone
@@ -20,6 +23,36 @@ from schemas import (
     AdminLogin, AdminToken, AdminUserResponse, AdminCreate,
     WebsiteContentCreate, WebsiteContentUpdate, WebsiteContentResponse
 )
+
+
+# ─── Rate Limiter (in-memory, per-IP) ──────────────────────────
+class RateLimiter:
+    def __init__(self, requests: int = 60, window: int = 60):
+        self.requests = requests
+        self.window = window
+        self._hits: dict[str, list[float]] = defaultdict(list)
+
+    def is_allowed(self, key: str) -> bool:
+        now = time.time()
+        self._hits[key] = [t for t in self._hits[key] if now - t < self.window]
+        if len(self._hits[key]) >= self.requests:
+            return False
+        self._hits[key].append(now)
+        return True
+
+    def remaining(self, key: str) -> int:
+        now = time.time()
+        self._hits[key] = [t for t in self._hits[key] if now - t < self.window]
+        return max(0, self.requests - len(self._hits[key]))
+
+    def reset_time(self, key: str) -> float:
+        if not self._hits[key]:
+            return self.window
+        return max(0, self.window - (time.time() - self._hits[key][0]))
+
+
+rate_limiter = RateLimiter(requests=120, window=60)
+rate_limiter_strict = RateLimiter(requests=10, window=60)
 
 security = HTTPBearer()
 
@@ -201,12 +234,49 @@ async def lifespan(_app: FastAPI):
     yield
 
 
-app = FastAPI(title="MD ALAHI MONDOL — CV Portfolio API", version="2.1.0", lifespan=lifespan)
+app = FastAPI(title="MD ALAHI MONDOL — CV Portfolio API", version="2.2.0", lifespan=lifespan)
+
+app.add_middleware(GZipMiddleware, minimum_size=500)
 
 
 @app.get("/api/health")
 def health_check():
-    return {"status": "ok", "version": "2.1.0", "routes": [r.path for r in app.routes if hasattr(r, "path")]}
+    return {"status": "ok", "version": "2.2.0", "routes": [r.path for r in app.routes if hasattr(r, "path")]}
+
+
+@app.middleware("http")
+async def add_headers(request: Request, call_next):
+    response = await call_next(request)
+    path = request.url.path
+
+    if path.startswith("/api/"):
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+
+        if not path.startswith("/api/admin"):
+            response.headers["Cache-Control"] = "public, max-age=30, stale-while-revalidate=60"
+        else:
+            response.headers["Cache-Control"] = "no-store"
+
+    return response
+
+
+def get_client_ip(request: Request) -> str:
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    return request.client.host if request.client else "unknown"
+
+
+def check_rate_limit(request: Request, limiter: RateLimiter = rate_limiter):
+    ip = get_client_ip(request)
+    if not limiter.is_allowed(ip):
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=f"Rate limit exceeded. Try again in {int(limiter.reset_time(ip))}s"
+        )
 
 app.add_middleware(
     CORSMiddleware,
@@ -290,7 +360,8 @@ def get_projects(db: Session = Depends(get_db)):
 
 
 @app.post("/api/contact", response_model=ContactResponse)
-def create_contact(payload: ContactCreate, db: Session = Depends(get_db)):
+def create_contact(payload: ContactCreate, request: Request, db: Session = Depends(get_db)):
+    check_rate_limit(request, rate_limiter_strict)
     msg = ContactMessage(**payload.model_dump())
     db.add(msg)
     db.commit()
@@ -301,7 +372,8 @@ def create_contact(payload: ContactCreate, db: Session = Depends(get_db)):
 # ─── Admin Authentication ────────────────────────────────────────
 
 @app.post("/api/admin/login", response_model=AdminToken)
-def admin_login(payload: AdminLogin, db: Session = Depends(get_db)):
+def admin_login(payload: AdminLogin, request: Request, db: Session = Depends(get_db)):
+    check_rate_limit(request, rate_limiter_strict)
     user = db.query(AdminUser).filter(AdminUser.username == payload.username).first()
     if not user or not user.verify_password(payload.password):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
