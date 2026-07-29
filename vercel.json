@@ -6,8 +6,7 @@
         },
         "backend": {
             "root": "backend",
-            "entrypoint": "main:app",
-            "framework": "python"
+            "entrypoint": "main:app"
         }
     },
     "rewrites": [
