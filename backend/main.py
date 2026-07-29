@@ -199,7 +199,7 @@ def health_check():
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:3001", "https://md-alahi-mondol.vercel.app", "https://mdalahimondol656-2022.vercel.app"],
+    allow_origins=os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:3001,https://md-alahi-mondol.vercel.app,https://mdalahimondol656-2022.vercel.app").split(","),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
