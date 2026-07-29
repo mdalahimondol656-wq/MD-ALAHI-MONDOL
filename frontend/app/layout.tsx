@@ -1,11 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
-import ScrollAnimations from "@/components/ScrollAnimations";
-import CustomCursor from "@/components/CustomCursor";
 import Preloader from "@/components/Preloader";
-import BackToTop from "@/components/BackToTop";
+import PublicShell from "@/components/PublicShell";
 
 export const metadata: Metadata = {
   title: "MD ALAHI MONDOL — CV Portfolio",
@@ -22,12 +18,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="flex min-h-full flex-col bg-slate-950 text-slate-100 antialiased overflow-x-hidden">
         <Preloader />
-        <CustomCursor />
-        <ScrollAnimations />
-        <Navbar />
-        <main className="flex-1 md:ml-[72px]">{children}</main>
-        <BackToTop />
-        <Footer />
+        <PublicShell>{children}</PublicShell>
       </body>
     </html>
   );

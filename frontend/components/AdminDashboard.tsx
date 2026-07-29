@@ -235,7 +235,7 @@ export default function AdminDashboard() {
                 className="w-64 pl-10 pr-4 py-2 rounded-xl bg-white/5 border border-white/10 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20 transition-all"
               />
             </div>
-            <a href="/" target="_blank" className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-slate-400 hover:text-cyan-400 hover:border-cyan-500/30 transition-all text-sm">
+            <a href="/" className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-slate-400 hover:text-cyan-400 hover:border-cyan-500/30 transition-all text-sm">
               <ExternalLink className="h-4 w-4" />
               <span className="hidden sm:inline">View Site</span>
             </a>
@@ -244,7 +244,7 @@ export default function AdminDashboard() {
 
         {/* Page Content */}
         <main className="p-4 sm:p-6 lg:p-8">
-          {section === "overview" && <OverviewSection data={data} />}
+          {section === "overview" && <OverviewSection data={data} onNavigate={(s) => setSection(s)} />}
           {section === "profile" && <ProfileSection addToast={addToast} onRefresh={refreshData} />}
           {section === "skills" && <SkillsSection data={data.content} addToast={addToast} onRefresh={refreshData} searchQuery={searchQuery} />}
           {section === "education" && <EducationSection data={data.education} addToast={addToast} onRefresh={refreshData} searchQuery={searchQuery} />}
@@ -259,7 +259,7 @@ export default function AdminDashboard() {
 }
 
 /* ─── Overview Section ────────────────────────────────────────── */
-function OverviewSection({ data }: { data: AdminData }) {
+function OverviewSection({ data, onNavigate }: { data: AdminData; onNavigate: (s: Section) => void }) {
   const skills = data.content.filter((c) => c.section === "skills");
   const stats = data.content.filter((c) => c.section === "stats");
   const socials = data.content.filter((c) => c.section === "social");
@@ -297,15 +297,16 @@ function OverviewSection({ data }: { data: AdminData }) {
           </h3>
           <div className="space-y-2">
             {[
-              { label: "Add Education", icon: <GraduationCap className="h-4 w-4" />, action: "education" },
-              { label: "Add Experience", icon: <Briefcase className="h-4 w-4" />, action: "experience" },
-              { label: "Add Skill", icon: <Zap className="h-4 w-4" />, action: "skills" },
-              { label: "Manage Content", icon: <Settings className="h-4 w-4" />, action: "content" },
+              { label: "Add Education", icon: <GraduationCap className="h-4 w-4" />, action: "education" as Section },
+              { label: "Add Experience", icon: <Briefcase className="h-4 w-4" />, action: "experience" as Section },
+              { label: "Add Skill", icon: <Zap className="h-4 w-4" />, action: "skills" as Section },
+              { label: "Manage Content", icon: <Settings className="h-4 w-4" />, action: "content" as Section },
             ].map((item) => (
-              <div key={item.label} className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/5 text-sm text-slate-300">
+              <button key={item.label} onClick={() => onNavigate(item.action)}
+                className="w-full flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/5 text-sm text-slate-300 hover:bg-cyan-500/10 hover:border-cyan-500/20 hover:text-cyan-400 transition-all cursor-pointer text-left">
                 <span className="text-cyan-400">{item.icon}</span>
                 {item.label}
-              </div>
+              </button>
             ))}
           </div>
         </div>
