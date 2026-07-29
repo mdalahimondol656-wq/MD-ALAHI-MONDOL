@@ -9,7 +9,7 @@ import hashlib
 import secrets
 
 from database import Base, engine, get_db
-from models import ContactMessage, AdminUser, Education, Experience, ProjectGroup, ProjectItem
+from models import ContactMessage, AdminUser, Education, Experience, ProjectGroup, ProjectItem, WebsiteContent
 from schemas import (
     ContactCreate, ContactResponse,
     ProfileUpdate,
@@ -17,7 +17,8 @@ from schemas import (
     ExperienceCreate, ExperienceUpdate, ExperienceResponse,
     ProjectGroupCreate, ProjectGroupUpdate, ProjectGroupResponse,
     ProjectItemCreate, ProjectItemUpdate, ProjectItemResponse,
-    AdminLogin, AdminToken, AdminUserResponse, AdminCreate
+    AdminLogin, AdminToken, AdminUserResponse, AdminCreate,
+    WebsiteContentCreate, WebsiteContentUpdate, WebsiteContentResponse
 )
 
 security = HTTPBearer()
@@ -121,6 +122,70 @@ async def lifespan(_app: FastAPI):
             for d in items:
                 db.add(ProjectItem(**d))
             db.commit()
+
+        if db.query(WebsiteContent).count() == 0:
+            content = [
+                # Profile
+                {"section": "profile", "key": "name", "value": "MD ALAHI MONDOL", "sort_order": 0},
+                {"section": "profile", "key": "title", "value": "Graduate Psychologist / Research Consultant", "sort_order": 1},
+                {"section": "profile", "key": "tagline", "value": "Bridging academic excellence in Psychology with data-driven behavioral insights.", "sort_order": 2},
+                {"section": "profile", "key": "location", "value": "Kurigram / Dhaka, Bangladesh", "sort_order": 3},
+                {"section": "profile", "key": "bio", "value": "Analytical and dedicated Psychology graduate with a comprehensive academic background spanning a Master of Science (M.Sc.) and a Bachelor of Science (B.Sc. Honours) from the University of Dhaka (Dhaka College). Equipped with a robust understanding of human behavior, clinical counseling frameworks, organizational dynamics, and environmental psychology. Proven capability in structured academic environments, backed by hands-on internship experience and structured project execution. Ready to leverage strong research methodology, data evaluation, and behavioral analysis skills to drive impactful solutions in psychological research, counseling, or human resources.", "sort_order": 4},
+                {"section": "profile", "key": "badge", "value": "Available for Opportunities", "sort_order": 5},
+                # Skills
+                {"section": "skills", "key": "skill", "value": "Clinical Psychology", "sort_order": 0},
+                {"section": "skills", "key": "skill", "value": "Counseling Frameworks", "sort_order": 1},
+                {"section": "skills", "key": "skill", "value": "Behavioral Analysis", "sort_order": 2},
+                {"section": "skills", "key": "skill", "value": "Industrial-Organizational Psychology", "sort_order": 3},
+                {"section": "skills", "key": "skill", "value": "Environmental Psychology", "sort_order": 4},
+                {"section": "skills", "key": "skill", "value": "Child Development Assessment", "sort_order": 5},
+                {"section": "skills", "key": "skill", "value": "Educational Psychology", "sort_order": 6},
+                {"section": "skills", "key": "skill", "value": "Positive Psychology", "sort_order": 7},
+                {"section": "skills", "key": "skill", "value": "Social Psychology", "sort_order": 8},
+                {"section": "skills", "key": "skill", "value": "Cognitive Psychology", "sort_order": 9},
+                {"section": "skills", "key": "skill", "value": "Field Data Collection", "sort_order": 10},
+                {"section": "skills", "key": "skill", "value": "Research Methodology", "sort_order": 11},
+                {"section": "skills", "key": "skill", "value": "Case Studies", "sort_order": 12},
+                {"section": "skills", "key": "skill", "value": "Academic Reporting", "sort_order": 13},
+                {"section": "skills", "key": "skill", "value": "Active Listening", "sort_order": 14},
+                {"section": "skills", "key": "skill", "value": "Empathy", "sort_order": 15},
+                # Stats
+                {"section": "stats", "key": "label_1", "value": "CGPA", "sort_order": 0},
+                {"section": "stats", "key": "value_1", "value": "3.10", "sort_order": 1},
+                {"section": "stats", "key": "suffix_1", "value": "/4.00", "sort_order": 2},
+                {"section": "stats", "key": "icon_1", "value": "GraduationCap", "sort_order": 3},
+                {"section": "stats", "key": "color_1", "value": "cyan", "sort_order": 4},
+                {"section": "stats", "key": "label_2", "value": "Experience", "sort_order": 5},
+                {"section": "stats", "key": "value_2", "value": "2", "sort_order": 6},
+                {"section": "stats", "key": "suffix_2", "value": "+ Years", "sort_order": 7},
+                {"section": "stats", "key": "icon_2", "value": "Briefcase", "sort_order": 8},
+                {"section": "stats", "key": "color_2", "value": "blue", "sort_order": 9},
+                {"section": "stats", "key": "label_3", "value": "Projects", "sort_order": 10},
+                {"section": "stats", "key": "value_3", "value": "10", "sort_order": 11},
+                {"section": "stats", "key": "suffix_3", "value": "+", "sort_order": 12},
+                {"section": "stats", "key": "icon_3", "value": "Award", "sort_order": 13},
+                {"section": "stats", "key": "color_3", "value": "teal", "sort_order": 14},
+                {"section": "stats", "key": "label_4", "value": "Skills", "sort_order": 15},
+                {"section": "stats", "key": "value_4", "value": "15", "sort_order": 16},
+                {"section": "stats", "key": "suffix_4", "value": "+", "sort_order": 17},
+                {"section": "stats", "key": "icon_4", "value": "TrendingUp", "sort_order": 18},
+                {"section": "stats", "key": "color_4", "value": "cyan", "sort_order": 19},
+                # Contact info
+                {"section": "contact", "key": "phone_1", "value": "01770 340 226", "sort_order": 0},
+                {"section": "contact", "key": "phone_2", "value": "0151 895 1529", "sort_order": 1},
+                {"section": "contact", "key": "email_1", "value": "mondolmdalahe1880@gmail.com", "sort_order": 2},
+                {"section": "contact", "key": "email_2", "value": "dwlaha9@gmail.com", "sort_order": 3},
+                {"section": "contact", "key": "dob", "value": "November 02, 1999", "sort_order": 4},
+                {"section": "contact", "key": "nationality", "value": "Bangladeshi", "sort_order": 5},
+                # Social links
+                {"section": "social", "key": "instagram", "value": "https://www.instagram.com/mdalahimondol", "sort_order": 0},
+                {"section": "social", "key": "linkedin", "value": "https://www.linkedin.com/in/md-alahi-914b13285", "sort_order": 1},
+                {"section": "social", "key": "github", "value": "https://github.com/mdalahimondol", "sort_order": 2},
+                {"section": "social", "key": "email", "value": "mailto:mondolmdalahe1880@gmail.com", "sort_order": 3},
+            ]
+            for d in content:
+                db.add(WebsiteContent(**d))
+            db.commit()
     finally:
         db.close()
     yield
@@ -140,21 +205,50 @@ app.add_middleware(
 # ─── Public Endpoints ────────────────────────────────────────────
 
 @app.get("/api/profile")
-def get_profile():
+def get_profile(db: Session = Depends(get_db)):
+    items = db.query(WebsiteContent).filter(WebsiteContent.section == "profile").all()
+    data = {item.key: item.value for item in items}
+    skills_raw = db.query(WebsiteContent).filter(WebsiteContent.section == "skills").order_by(WebsiteContent.sort_order).all()
+    skills = [s.value for s in skills_raw]
     return {
-        "name": "MD ALAHI MONDOL",
-        "title": "Graduate Psychologist / Research Consultant",
-        "tagline": "Bridging academic excellence in Psychology with data-driven behavioral insights.",
-        "location": "Kurigram / Dhaka, Bangladesh",
-        "bio": "Analytical and dedicated Psychology graduate with a comprehensive academic background spanning a Master of Science (M.Sc.) and a Bachelor of Science (B.Sc. Honours) from the University of Dhaka (Dhaka College). Equipped with a robust understanding of human behavior, clinical counseling frameworks, organizational dynamics, and environmental psychology. Proven capability in structured academic environments, backed by hands-on internship experience and structured project execution. Ready to leverage strong research methodology, data evaluation, and behavioral analysis skills to drive impactful solutions in psychological research, counseling, or human resources.",
-        "skills": [
-            "Clinical Psychology", "Counseling Frameworks", "Behavioral Analysis",
-            "Industrial-Organizational Psychology", "Environmental Psychology",
-            "Child Development Assessment", "Educational Psychology",
-            "Positive Psychology", "Social Psychology", "Cognitive Psychology",
-            "Field Data Collection", "Research Methodology", "Case Studies",
-            "Academic Reporting", "Active Listening", "Empathy",
-        ],
+        "name": data.get("name", "MD ALAHI MONDOL"),
+        "title": data.get("title", "Graduate Psychologist / Research Consultant"),
+        "tagline": data.get("tagline", "Bridging academic excellence in Psychology with data-driven behavioral insights."),
+        "location": data.get("location", "Kurigram / Dhaka, Bangladesh"),
+        "bio": data.get("bio", "Analytical and dedicated Psychology graduate..."),
+        "skills": skills,
+    }
+
+
+@app.get("/api/stats")
+def get_stats(db: Session = Depends(get_db)):
+    items = db.query(WebsiteContent).filter(WebsiteContent.section == "stats").order_by(WebsiteContent.sort_order).all()
+    data = {item.key: item.value for item in items}
+    return [
+        {"label": data.get("label_1", "CGPA"), "value": float(data.get("value_1", "3.10")), "suffix": data.get("suffix_1", "/4.00"), "icon": data.get("icon_1", "GraduationCap"), "color": data.get("color_1", "cyan")},
+        {"label": data.get("label_2", "Experience"), "value": int(data.get("value_2", "2")), "suffix": data.get("suffix_2", "+ Years"), "icon": data.get("icon_2", "Briefcase"), "color": data.get("color_2", "blue")},
+        {"label": data.get("label_3", "Projects"), "value": int(data.get("value_3", "10")), "suffix": data.get("suffix_3", "+"), "icon": data.get("icon_3", "Award"), "color": data.get("color_3", "teal")},
+        {"label": data.get("label_4", "Skills"), "value": int(data.get("value_4", "15")), "suffix": data.get("suffix_4", "+"), "icon": data.get("icon_4", "TrendingUp"), "color": data.get("color_4", "cyan")},
+    ]
+
+
+@app.get("/api/contact-info")
+def get_contact_info(db: Session = Depends(get_db)):
+    items = db.query(WebsiteContent).filter(WebsiteContent.section == "contact").order_by(WebsiteContent.sort_order).all()
+    data = {item.key: item.value for item in items}
+    socials = db.query(WebsiteContent).filter(WebsiteContent.section == "social").order_by(WebsiteContent.sort_order).all()
+    social_data = {s.key: s.value for s in socials}
+    return {
+        "phones": [data.get("phone_1", "01770 340 226"), data.get("phone_2", "0151 895 1529")],
+        "emails": [data.get("email_1", "mondolmdalahe1880@gmail.com"), data.get("email_2", "dwlaha9@gmail.com")],
+        "dob": data.get("dob", "November 02, 1999"),
+        "nationality": data.get("nationality", "Bangladeshi"),
+        "socials": {
+            "instagram": social_data.get("instagram", "https://www.instagram.com/mdalahimondol"),
+            "linkedin": social_data.get("linkedin", "https://www.linkedin.com/in/md-alahi-914b13285"),
+            "github": social_data.get("github", "https://github.com/mdalahimondol"),
+            "email": social_data.get("email", "mailto:mondolmdalahe1880@gmail.com"),
+        },
     }
 
 
@@ -403,3 +497,50 @@ def delete_contact(contact_id: int, current_admin: AdminUser = Depends(get_curre
     db.delete(msg)
     db.commit()
     return {"message": "Deleted"}
+
+
+# ─── Admin Website Content CRUD ──────────────────────────────────
+
+@app.get("/api/admin/content", response_model=list[WebsiteContentResponse])
+def list_content(section: str = None, current_admin: AdminUser = Depends(get_current_admin), db: Session = Depends(get_db)):
+    q = db.query(WebsiteContent)
+    if section:
+        q = q.filter(WebsiteContent.section == section)
+    return q.order_by(WebsiteContent.section, WebsiteContent.sort_order).all()
+
+
+@app.post("/api/admin/content", response_model=WebsiteContentResponse)
+def create_content(item: WebsiteContentCreate, current_admin: AdminUser = Depends(get_current_admin), db: Session = Depends(get_db)):
+    content = WebsiteContent(**item.model_dump())
+    db.add(content)
+    db.commit()
+    db.refresh(content)
+    return content
+
+
+@app.put("/api/admin/content/{content_id}", response_model=WebsiteContentResponse)
+def update_content(content_id: int, item: WebsiteContentUpdate, current_admin: AdminUser = Depends(get_current_admin), db: Session = Depends(get_db)):
+    content = db.query(WebsiteContent).filter(WebsiteContent.id == content_id).first()
+    if not content:
+        raise HTTPException(status_code=404, detail="Content not found")
+    for key, value in item.model_dump(exclude_none=True).items():
+        setattr(content, key, value)
+    db.commit()
+    db.refresh(content)
+    return content
+
+
+@app.delete("/api/admin/content/{content_id}")
+def delete_content(content_id: int, current_admin: AdminUser = Depends(get_current_admin), db: Session = Depends(get_db)):
+    content = db.query(WebsiteContent).filter(WebsiteContent.id == content_id).first()
+    if not content:
+        raise HTTPException(status_code=404, detail="Content not found")
+    db.delete(content)
+    db.commit()
+    return {"message": "Deleted"}
+
+
+@app.get("/api/admin/content/{section}")
+def get_section_content(section: str, current_admin: AdminUser = Depends(get_current_admin), db: Session = Depends(get_db)):
+    items = db.query(WebsiteContent).filter(WebsiteContent.section == section).order_by(WebsiteContent.sort_order).all()
+    return {item.key: item.value for item in items}

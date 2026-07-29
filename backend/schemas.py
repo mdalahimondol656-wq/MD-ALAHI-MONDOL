@@ -199,3 +199,26 @@ class AdminCreate(BaseModel):
     username: str
     password: str
     email: Optional[str] = None
+
+
+# Website Content
+class WebsiteContentResponse(BaseModel):
+    id: int
+    section: str
+    key: str
+    value: str
+    sort_order: int
+
+    model_config = {"from_attributes": True}
+
+
+class WebsiteContentCreate(BaseModel):
+    section: str
+    key: str
+    value: str
+    sort_order: int = 0
+
+
+class WebsiteContentUpdate(BaseModel):
+    value: Optional[str] = None
+    sort_order: Optional[int] = None

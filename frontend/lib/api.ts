@@ -248,3 +248,53 @@ export async function updateProfileAdmin(token: string, data: any) {
   if (!res.ok) throw new Error("Failed to update profile");
   return res.json();
 }
+
+// Public - Stats & Contact Info
+export async function getStats() {
+  const res = await fetch(`${API_BASE}/stats`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to fetch stats");
+  return res.json();
+}
+
+export async function getContactInfo() {
+  const res = await fetch(`${API_BASE}/contact-info`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to fetch contact info");
+  return res.json();
+}
+
+// Admin - Website Content
+export async function getContentAdmin(token: string, section?: string) {
+  const url = section ? `${API_BASE}/admin/content?section=${section}` : `${API_BASE}/admin/content`;
+  const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+  if (!res.ok) throw new Error("Failed to fetch content");
+  return res.json();
+}
+
+export async function createContentAdmin(token: string, data: any) {
+  const res = await fetch(`${API_BASE}/admin/content`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error("Failed to create content");
+  return res.json();
+}
+
+export async function updateContentAdmin(token: string, id: number, data: any) {
+  const res = await fetch(`${API_BASE}/admin/content/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error("Failed to update content");
+  return res.json();
+}
+
+export async function deleteContentAdmin(token: string, id: number) {
+  const res = await fetch(`${API_BASE}/admin/content/${id}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error("Failed to delete content");
+  return res.json();
+}

@@ -4,7 +4,8 @@ import { useRouter } from "next/navigation";
 import {
   LayoutDashboard, User, GraduationCap, Briefcase, FolderOpen,
   Mail, LogOut, Plus, Edit2, Trash2, Save, X, RefreshCw,
-  Shield, BookOpen, Award, BarChart3, CheckCircle, AlertCircle
+  Shield, BookOpen, Award, BarChart3, CheckCircle, AlertCircle,
+  Settings, Zap, Link2, Star
 } from "lucide-react";
 import {
   getAdminMe, getEducationAdmin, createEducationAdmin, updateEducationAdmin, deleteEducationAdmin,
@@ -12,16 +13,18 @@ import {
   getProjectGroupsAdmin, createProjectGroupAdmin, updateProjectGroupAdmin, deleteProjectGroupAdmin,
   getProjectItemsAdmin, createProjectItemAdmin, updateProjectItemAdmin, deleteProjectItemAdmin,
   getContactsAdmin, deleteContactAdmin, adminLogout,
-  getProfile, updateProfileAdmin
+  getProfile, updateProfileAdmin,
+  getContentAdmin, createContentAdmin, updateContentAdmin, deleteContentAdmin
 } from "@/lib/api";
 
-type Tab = "overview" | "profile" | "education" | "experience" | "projects" | "contacts";
+type Tab = "overview" | "profile" | "skills" | "education" | "experience" | "projects" | "content" | "contacts";
 
 interface AdminData {
   education: any[];
   experiences: any[];
   projects: any[];
   contacts: any[];
+  content: any[];
 }
 
 const colorBgMap: Record<string, string> = {
@@ -50,6 +53,7 @@ export default function AdminDashboard() {
     experiences: [],
     projects: [],
     contacts: [],
+    content: [],
   });
   const [notification, setNotification] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const router = useRouter();
@@ -63,15 +67,16 @@ export default function AdminDashboard() {
 
   const loadData = useCallback(async (token: string) => {
     try {
-      const [adminData, education, experiences, projects, contacts] = await Promise.all([
+      const [adminData, education, experiences, projects, contacts, content] = await Promise.all([
         getAdminMe(token),
         getEducationAdmin(token),
         getExperiencesAdmin(token),
         getProjectGroupsAdmin(token),
         getContactsAdmin(token),
+        getContentAdmin(token),
       ]);
       setAdmin(adminData);
-      setData({ education, experiences, projects, contacts });
+      setData({ education, experiences, projects, contacts, content });
     } catch (err) {
       showNotification("error", "Failed to load data");
       router.push("/admin/login");
@@ -115,9 +120,11 @@ export default function AdminDashboard() {
   const tabs: { id: Tab; label: string; icon: React.ReactNode; count?: number }[] = [
     { id: "overview", label: "Overview", icon: <LayoutDashboard className="h-4 w-4" /> },
     { id: "profile", label: "Profile", icon: <User className="h-4 w-4" /> },
+    { id: "skills", label: "Skills", icon: <Zap className="h-4 w-4" /> },
     { id: "education", label: "Education", icon: <GraduationCap className="h-4 w-4" />, count: data.education.length },
     { id: "experience", label: "Experience", icon: <Briefcase className="h-4 w-4" />, count: data.experiences.length },
     { id: "projects", label: "Projects", icon: <FolderOpen className="h-4 w-4" />, count: data.projects.length },
+    { id: "content", label: "Content", icon: <Settings className="h-4 w-4" />, count: data.content.length },
     { id: "contacts", label: "Contacts", icon: <Mail className="h-4 w-4" />, count: data.contacts.length },
   ];
 
@@ -213,6 +220,20 @@ export default function AdminDashboard() {
               showNotification={showNotification}
             />
           )}
+          {activeTab === "skills" && (
+            <SkillsTab
+              data={data.content}
+              onRefresh={refreshData}
+              showNotification={showNotification}
+            />
+          )}
+          {activeTab === "content" && (
+            <ContentTab
+              data={data.content}
+              onRefresh={refreshData}
+              showNotification={showNotification}
+            />
+          )}
           {activeTab === "contacts" && (
             <ContactsTab
               data={data.contacts}
@@ -231,7 +252,8 @@ function OverviewTab({ data }: { data: AdminData }) {
     { label: "Education", value: data.education.length, icon: <GraduationCap className="h-5 w-5" />, color: "cyan" as const },
     { label: "Experience", value: data.experiences.length, icon: <Briefcase className="h-5 w-5" />, color: "blue" as const },
     { label: "Project Groups", value: data.projects.length, icon: <FolderOpen className="h-5 w-5" />, color: "teal" as const },
-    { label: "Messages", value: data.contacts.length, icon: <Mail className="h-5 w-5" />, color: "cyan" as const },
+    { label: "Content Items", value: data.content.length, icon: <Settings className="h-5 w-5" />, color: "cyan" as const },
+    { label: "Messages", value: data.contacts.length, icon: <Mail className="h-5 w-5" />, color: "blue" as const },
   ];
 
   return (
@@ -811,6 +833,215 @@ function ContactsTab({ data, onRefresh, showNotification }: { data: any[]; onRef
           <div className="text-center py-12 text-slate-500">
             <Mail className="h-12 w-12 mx-auto mb-3 opacity-30" />
             <p>No messages yet</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function SkillsTab({ data, onRefresh, showNotification }: { data: any[]; onRefresh: () => void; showNotification: (type: "success" | "error", message: string) => void }) {
+  const token = typeof window !== "undefined" ? localStorage.getItem("admin_token") || "" : "";
+  const [newSkill, setNewSkill] = useState("");
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editValue, setEditValue] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const skills = data.filter((item) => item.section === "skills");
+
+  const handleAdd = async () => {
+    if (!newSkill.trim()) return;
+    setSaving(true);
+    try {
+      await createContentAdmin(token, { section: "skills", key: "skill", value: newSkill.trim(), sort_order: skills.length });
+      showNotification("success", "Skill added");
+      setNewSkill("");
+      onRefresh();
+    } catch {
+      showNotification("error", "Failed to add skill");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleUpdate = async (id: number) => {
+    setSaving(true);
+    try {
+      await updateContentAdmin(token, id, { value: editValue });
+      showNotification("success", "Skill updated");
+      setEditingId(null);
+      onRefresh();
+    } catch {
+      showNotification("error", "Failed to update skill");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!confirm("Delete this skill?")) return;
+    try {
+      await deleteContentAdmin(token, id);
+      showNotification("success", "Skill deleted");
+      onRefresh();
+    } catch {
+      showNotification("error", "Failed to delete skill");
+    }
+  };
+
+  return (
+    <div className="glass-card p-6">
+      <div className="flex items-center justify-between mb-6">
+        <h3 className="text-lg font-bold text-white flex items-center gap-2">
+          <Zap className="h-5 w-5 text-cyan-400" />
+          Skills Management
+        </h3>
+        <span className="px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-medium">{skills.length} skills</span>
+      </div>
+
+      <div className="flex gap-2 mb-6">
+        <input value={newSkill} onChange={(e) => setNewSkill(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleAdd()} placeholder="Add a new skill..." className="flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white" />
+        <button onClick={handleAdd} disabled={saving || !newSkill.trim()} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 hover:bg-cyan-500/20 transition-all text-sm disabled:opacity-50">
+          <Plus className="h-4 w-4" /> Add
+        </button>
+      </div>
+
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        {skills.map((skill) => (
+          <div key={skill.id} className="flex items-center gap-2 p-3 rounded-xl bg-white/5 border border-white/10 hover:border-cyan-500/30 transition-all">
+            {editingId === skill.id ? (
+              <>
+                <input value={editValue} onChange={(e) => setEditValue(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleUpdate(skill.id)} className="flex-1 rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-xs text-white" autoFocus />
+                <button onClick={() => handleUpdate(skill.id)} className="p-1 text-cyan-400 hover:bg-cyan-500/10 rounded"><Save className="h-3 w-3" /></button>
+                <button onClick={() => setEditingId(null)} className="p-1 text-slate-400 hover:bg-white/10 rounded"><X className="h-3 w-3" /></button>
+              </>
+            ) : (
+              <>
+                <span className="flex-1 text-sm text-slate-300">{skill.value}</span>
+                <button onClick={() => { setEditingId(skill.id); setEditValue(skill.value); }} className="p-1 text-slate-400 hover:text-cyan-400 transition-all"><Edit2 className="h-3 w-3" /></button>
+                <button onClick={() => handleDelete(skill.id)} className="p-1 text-slate-400 hover:text-red-400 transition-all"><Trash2 className="h-3 w-3" /></button>
+              </>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ContentTab({ data, onRefresh, showNotification }: { data: any[]; onRefresh: () => void; showNotification: (type: "success" | "error", message: string) => void }) {
+  const token = typeof window !== "undefined" ? localStorage.getItem("admin_token") || "" : "";
+  const [activeSection, setActiveSection] = useState("stats");
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editValue, setEditValue] = useState("");
+  const [newKey, setNewKey] = useState("");
+  const [newValue, setNewValue] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const sections = ["stats", "contact", "social", "profile"];
+  const sectionItems = data.filter((item) => item.section === activeSection);
+
+  const sectionLabels: Record<string, string> = {
+    stats: "Statistics",
+    contact: "Contact Info",
+    social: "Social Links",
+    profile: "Profile",
+  };
+
+  const handleUpdate = async (id: number) => {
+    setSaving(true);
+    try {
+      await updateContentAdmin(token, id, { value: editValue });
+      showNotification("success", "Content updated");
+      setEditingId(null);
+      onRefresh();
+    } catch {
+      showNotification("error", "Failed to update content");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleAdd = async () => {
+    if (!newKey.trim() || !newValue.trim()) return;
+    setSaving(true);
+    try {
+      await createContentAdmin(token, { section: activeSection, key: newKey.trim(), value: newValue.trim(), sort_order: sectionItems.length });
+      showNotification("success", "Content added");
+      setNewKey("");
+      setNewValue("");
+      onRefresh();
+    } catch {
+      showNotification("error", "Failed to add content");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!confirm("Delete this content?")) return;
+    try {
+      await deleteContentAdmin(token, id);
+      showNotification("success", "Content deleted");
+      onRefresh();
+    } catch {
+      showNotification("error", "Failed to delete content");
+    }
+  };
+
+  return (
+    <div className="glass-card p-6">
+      <div className="flex items-center justify-between mb-6">
+        <h3 className="text-lg font-bold text-white flex items-center gap-2">
+          <Settings className="h-5 w-5 text-cyan-400" />
+          Website Content
+        </h3>
+      </div>
+
+      <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+        {sections.map((s) => (
+          <button key={s} onClick={() => { setActiveSection(s); setEditingId(null); }} className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all whitespace-nowrap ${activeSection === s ? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/30" : "bg-white/5 text-slate-400 border border-white/10 hover:bg-white/10"}`}>
+            {sectionLabels[s] || s}
+            <span className="ml-1 px-2 py-0.5 rounded-full text-xs bg-white/10 text-slate-500">{data.filter((d) => d.section === s).length}</span>
+          </button>
+        ))}
+      </div>
+
+      <div className="mb-6 p-4 rounded-xl bg-white/5 border border-cyan-500/20 space-y-3">
+        <h4 className="text-sm font-semibold text-cyan-400">Add New Content</h4>
+        <div className="flex gap-2">
+          <input value={newKey} onChange={(e) => setNewKey(e.target.value)} placeholder="Key (e.g., phone_1, label_1)" className="w-1/3 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white" />
+          <input value={newValue} onChange={(e) => setNewValue(e.target.value)} placeholder="Value" className="flex-1 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white" />
+          <button onClick={handleAdd} disabled={saving || !newKey.trim() || !newValue.trim()} className="flex items-center gap-1 px-4 py-2 rounded-lg bg-cyan-500/20 text-cyan-400 text-sm hover:bg-cyan-500/30 disabled:opacity-50">
+            <Plus className="h-3 w-3" /> Add
+          </button>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        {sectionItems.map((item) => (
+          <div key={item.id} className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10 hover:border-cyan-500/30 transition-all">
+            {editingId === item.id ? (
+              <>
+                <span className="text-xs text-slate-500 w-24 shrink-0">{item.key}</span>
+                <input value={editValue} onChange={(e) => setEditValue(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleUpdate(item.id)} className="flex-1 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-white" autoFocus />
+                <button onClick={() => handleUpdate(item.id)} className="p-1.5 text-cyan-400 hover:bg-cyan-500/10 rounded"><Save className="h-3 w-3" /></button>
+                <button onClick={() => setEditingId(null)} className="p-1.5 text-slate-400 hover:bg-white/10 rounded"><X className="h-3 w-3" /></button>
+              </>
+            ) : (
+              <>
+                <span className="text-xs text-slate-500 w-24 shrink-0">{item.key}</span>
+                <span className="flex-1 text-sm text-slate-300 truncate">{item.value}</span>
+                <button onClick={() => { setEditingId(item.id); setEditValue(item.value); }} className="p-1.5 text-slate-400 hover:text-cyan-400 transition-all"><Edit2 className="h-3 w-3" /></button>
+                <button onClick={() => handleDelete(item.id)} className="p-1.5 text-slate-400 hover:text-red-400 transition-all"><Trash2 className="h-3 w-3" /></button>
+              </>
+            )}
+          </div>
+        ))}
+        {sectionItems.length === 0 && (
+          <div className="text-center py-12 text-slate-500">
+            <Settings className="h-12 w-12 mx-auto mb-3 opacity-30" />
+            <p>No content in this section yet</p>
           </div>
         )}
       </div>

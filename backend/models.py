@@ -75,3 +75,15 @@ class ProjectItem(Base):
     desc = Column(Text, nullable=False)
     group_id = Column(Integer, ForeignKey("project_groups.id"), nullable=False)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+
+class WebsiteContent(Base):
+    __tablename__ = "website_content"
+
+    id = Column(Integer, primary_key=True, index=True)
+    section = Column(String(50), nullable=False, index=True)
+    key = Column(String(100), nullable=False)
+    value = Column(Text, nullable=False)
+    sort_order = Column(Integer, default=0)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
