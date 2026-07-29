@@ -14,3 +14,4 @@ frontend_stdout.log
 frontend_error.log
 
 .vercel
+.env*
